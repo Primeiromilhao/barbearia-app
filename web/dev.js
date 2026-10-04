@@ -1,5 +1,5 @@
 const API="https://barbearia-api.onrender.com/api/dev";const $=id=>document.getElementById(id);
-async function api(path,opt={}){const r=await fetch(API+path,{credentials:"same-origin",headers:{"Content-Type":"application/json",...(opt.headers||{})},...opt});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"Erro");return d}
+async function api(path,opt={}){const r=await fetch(API+path,{credentials:"include",headers:{"Content-Type":"application/json",...(opt.headers||{})},...opt});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"Erro");return d}
 async function check(){try{const d=await api("/me");if(d.authenticated){$("loginView").hidden=true;$("consoleView").hidden=false;loadAll()}}catch{}}
 $("loginBtn").onclick=async()=>{try{await api("/login",{method:"POST",body:JSON.stringify({password:$("devPassword").value})});$("devPassword").value="";$("loginView").hidden=true;$("consoleView").hidden=false;loadAll()}catch(e){$("loginStatus").textContent=e.message}};
 $("logoutBtn").onclick=async()=>{await api("/logout",{method:"POST"});location.reload()};
