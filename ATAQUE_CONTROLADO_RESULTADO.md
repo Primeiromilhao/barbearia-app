@@ -32,8 +32,21 @@ STATUS: PASS quanto ao bloqueio da origem.
 ### A05 — Métodos inesperados
 A checar após deploy da versão corrigida. Esperado: 405.
 
+## ESTADO FINAL DA RODADA
+
+LOCAL: PASS nos controles de autenticação, IDOR, ownership, replay, logout, métodos HTTP e CORS.
+
+Correções aplicadas: sessão do cliente vinculada ao telefone; histórico e cancelamento exigem ownership; telefone duplicado não pode ser tomado por outra sessão; criação de agendamento exige sessão correspondente; frontend envia cookies de sessão.
+
+ONLINE: BLOCKED. Render continua retornando /api/owner/me = 404 e endpoints antigos sem autenticação. A versão endurecida ainda não foi confirmada no host. BARBEARIA_OWNER_PASSWORD também precisa estar configurada no Render.
+
+WEB E2E: o teste antigo de navegador está obsoleto porque pressupõe a autenticação antiga por telefone do proprietário. Não é critério de aprovação da arquitetura mobile-first.
+
 ## BLOQUEIO DE RELEASE
-FAIL crítico enquanto Render estiver na versão antiga e enquanto ownership de cliente/cancelamento não estiver protegido.
+FAIL crítico apenas no gate de infraestrutura/deploy: a versão endurecida ainda não está confirmada online.
+
+## PRÓXIMO GATE
+Depois do deploy, repetir ataques online e só então validar vínculo seguro do app do proprietário ao dispositivo e transferência de propriedade.
 
 ## PRÓXIMAS FASES
 1. Deploy dos commits de segurança no Render.
