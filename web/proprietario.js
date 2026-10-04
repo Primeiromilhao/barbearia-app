@@ -1,4 +1,4 @@
-const API="https://barbearia-api.onrender.com/api";const $=id=>document.getElementById(id);let ownerPhone="";
+const API="https://barbearia-api-w37o.onrender.com/api";const $=id=>document.getElementById(id);let ownerPhone="";
 async function api(path,opt={}){const r=await fetch(API+path,{headers:{"Content-Type":"application/json"},...opt});const d=await r.json();if(!r.ok)throw new Error(d.error||"Erro");return d}
 $("ownerEnter").onclick=async()=>{ownerPhone=$("ownerPhone").value.trim();if(!ownerPhone)return $("ownerStatus").textContent="Informe o telefone.";localStorage.setItem("barbearia_proprietario",ownerPhone);$("ownerArea").hidden=false;$("ownerStatus").textContent="Área do proprietário ativa.";render()};
 async function render(){

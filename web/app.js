@@ -1,4 +1,4 @@
-const API="https://barbearia-api.onrender.com/api";
+const API="https://barbearia-api-w37o.onrender.com/api";
 let user=null,service=null,time="",rescheduleId=null;
 const $=id=>document.getElementById(id);
 const screens=[...document.querySelectorAll(".screen")];
