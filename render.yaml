@@ -15,3 +15,5 @@ services:
         generateValue: true
       - key: BARBEARIA_DEV_PASSWORD
         sync: false
+      - key: BARBEARIA_OWNER_PASSWORD
+        sync: false
