@@ -1,72 +1,15 @@
 <!doctype html>
-<html lang="pt-BR">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0d1117">
-<meta name="description" content="Barbearia — aplicativo de agendamento">
-<title>Barbearia • Agendamento</title>
-<link rel="stylesheet" href="styles.css">
-</head>
-<body>
-<div class="app-shell">
-<header class="topbar">
-  <a href="#inicio" class="brand" aria-label="Início"><span class="brand-mark">✂</span><span>BARBEARIA<small>ESTILO ÚNICO</small></span></a>
-  <nav aria-label="Navegação principal"><a class="active" href="#inicio">Início</a><a href="#agendar">Agendar</a><a href="#historico">Histórico</a><a href="#perfil">Perfil</a></nav>
-</header>
-
-<main id="inicio">
-<section class="welcome hero-card">
-  <div class="hero-photo" aria-hidden="true"><span>✂</span></div>
-  <div class="hero-copy">
-    <p class="eyebrow">APLICATIVO DO CLIENTE</p>
-    <h1>Seu estilo.<br><strong>Seu horário.</strong></h1>
-    <p>Agende seu corte de forma simples, rápida e sem complicação.</p>
-    <a class="gold-btn" href="#agendar">Agendar agora</a>
-  </div>
-</section>
-
-<section class="client-menu">
-  <div class="section-heading"><div><span class="eyebrow">ÁREA DO CLIENTE</span><h2>Olá! O que você deseja?</h2></div></div>
-  <div class="menu-grid">
-    <a class="menu-card" href="#agendar"><span>◫</span><b>Novo<br>agendamento</b></a>
-    <a class="menu-card" href="#historico"><span>▣</span><b>Meus<br>agendamentos</b></a>
-    <a class="menu-card" href="#perfil"><span>♙</span><b>Meus<br>dados</b></a>
-    <a class="menu-card" href="#contato"><span>☏</span><b>Falar com<br>a barbearia</b></a>
-  </div>
-</section>
-
-<section id="agendar" class="booking">
-  <div class="section-heading"><span class="eyebrow">NOVO AGENDAMENTO</span><h2>Escolha o serviço</h2><p>Depois selecione a data e um horário disponível.</p></div>
-  <form id="booking-form">
-    <div class="service-grid">
-      <label class="service-card"><input type="radio" name="service" value="Corte de Cabelo" required><span class="service-photo photo-1"></span><span><b>Corte de Cabelo</b><small>€ 15,00 · 30 min</small></span></label>
-      <label class="service-card"><input type="radio" name="service" value="Barba"><span class="service-photo photo-2"></span><span><b>Barba</b><small>€ 10,00 · 20 min</small></span></label>
-      <label class="service-card"><input type="radio" name="service" value="Corte + Barba"><span class="service-photo photo-3"></span><span><b>Corte + Barba</b><small>€ 22,00 · 50 min</small></span></label>
-      <label class="service-card"><input type="radio" name="service" value="Sobrancelha"><span class="service-photo photo-4"></span><span><b>Sobrancelha</b><small>€ 7,00 · 15 min</small></span></label>
-    </div>
-    <div class="booking-fields">
-      <label>Nome<input name="client" required placeholder="Seu nome"></label>
-      <label>Telefone<input name="phone" required inputmode="tel" placeholder="+351 9xx xxx xxx"></label>
-      <label>Data<input name="date" type="date" required></label>
-      <label>Horário<select name="time" required><option value="">Escolha o horário</option><option>09:00</option><option>10:00</option><option>11:00</option><option>13:00</option><option>14:00</option><option>15:00</option><option>16:00</option><option>17:00</option><option>18:00</option></select></label>
-    </div>
-    <button class="gold-btn full" type="submit">Continuar e confirmar</button>
-    <p id="booking-status" role="status" aria-live="polite"></p>
-  </form>
-</section>
-
-<section id="historico" class="history">
-  <div class="section-heading"><span class="eyebrow">SEUS HORÁRIOS</span><h2>Meus agendamentos</h2></div>
-  <div id="appointment-list" class="appointment-list"><p class="empty">Nenhum agendamento ainda.</p></div>
-</section>
-
-<section id="perfil" class="profile"><div><span class="eyebrow">PERFIL</span><h2>Seus dados</h2><p>Os dados ficam guardados neste dispositivo para facilitar seus próximos agendamentos.</p></div></section>
-<section id="contato" class="profile"><div><span class="eyebrow">ATENDIMENTO</span><h2>Falar com a barbearia</h2><p>Entre em contacto para dúvidas, alterações ou informações.</p></div></section>
-</main>
-
-<footer><span>BARBEARIA · ESTILO ÚNICO</span><small>Aplicativo de agendamento</small></footer>
-</div>
-<script src="app.js"></script>
-</body>
-</html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b0f14"><title>Barbearia • Agendamento</title><link rel="stylesheet" href="styles.css"></head>
+<body><div class="app">
+<header class="topbar"><button class="back" id="back" aria-label="Voltar">‹</button><a class="brand" href="#home">✂ <span>BARBEARIA<small>ESTILO ÚNICO</small></span></a><button class="gear" aria-label="Configurações">⚙</button></header>
+<main>
+<section class="screen active" data-screen="welcome"><div class="welcome-photo"><div class="scissor">✂</div></div><span class="eyebrow">APLICATIVO DO CLIENTE</span><h1>Bem-vindo!</h1><p>Agende seu horário de forma<br>fácil e rápida.</p><button class="gold" data-go="home">Criar minha conta</button><button class="dark-btn" data-go="home">Já tenho conta</button></section>
+<section class="screen" data-screen="home"><div class="avatar">JS</div><p class="hello">Olá, João!</p><h2>O que você deseja?</h2><div class="menu-grid"><button data-go="service"><b>✂</b><span>Novo<br>agendamento</span></button><button data-go="history"><b>▣</b><span>Meus<br>agendamentos</span></button><button data-go="profile"><b>♙</b><span>Meus<br>dados</span></button><button data-go="contact"><b>☏</b><span>Falar com<br>a barbearia</span></button></div></section>
+<section class="screen" data-screen="service"><span class="eyebrow">NOVO AGENDAMENTO</span><h2>Escolha o serviço</h2><div class="cards"><label class="service"><input type="radio" name="service" value="Corte de Cabelo"><span class="pic">✂</span><span><b>Corte de Cabelo</b><small>€ 15,00 · 30 min</small></span></label><label class="service"><input type="radio" name="service" value="Barba"><span class="pic">✂</span><span><b>Barba</b><small>€ 10,00 · 20 min</small></span></label><label class="service"><input type="radio" name="service" value="Corte + Barba"><span class="pic">✂</span><span><b>Corte + Barba</b><small>€ 22,00 · 50 min</small></span></label><label class="service"><input type="radio" name="service" value="Sobrancelha"><span class="pic">✂</span><span><b>Sobrancelha</b><small>€ 7,00 · 15 min</small></span></label></div><button class="gold full" data-next="datetime">Continuar</button></section>
+<section class="screen" data-screen="datetime"><span class="eyebrow">NOVO AGENDAMENTO</span><h2>Escolha a data e o horário</h2><label>Data<input id="date" type="date"></label><h3>Horários disponíveis</h3><div class="times" id="times"></div><button class="gold full" data-next="confirm">Continuar</button></section>
+<section class="screen" data-screen="confirm"><span class="eyebrow">CONFIRME SEU AGENDAMENTO</span><h2>Confira os dados</h2><div class="summary" id="summary"></div><label>Nome<input id="client" placeholder="Seu nome" required></label><label>Telefone<input id="phone" placeholder="+351 9xx xxx xxx"></label><button class="gold full" id="confirmBtn">Confirmar agendamento</button></section>
+<section class="screen" data-screen="success"><div class="check">✓</div><h1>Agendamento<br>confirmado!</h1><p>Seu horário foi reservado com sucesso.</p><div class="summary" id="successSummary"></div><button class="gold full" data-go="history">Ver meus agendamentos</button></section>
+<section class="screen" data-screen="history"><span class="eyebrow">SEUS HORÁRIOS</span><h2>Meus agendamentos</h2><div id="list"></div></section>
+<section class="screen" data-screen="profile"><span class="eyebrow">PERFIL</span><h2>Meus dados</h2><p>Seus dados podem ser usados para facilitar próximos agendamentos.</p></section>
+<section class="screen" data-screen="contact"><span class="eyebrow">ATENDIMENTO</span><h2>Falar com a barbearia</h2><p>Entre em contacto para dúvidas, alterações ou informações.</p></section>
+</main></div><script src="app.js"></script></body></html>
