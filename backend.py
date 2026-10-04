@@ -10,6 +10,30 @@ WEB = BASE / "web"
 DB = Path(os.environ.get("BARBEARIA_DB_PATH", str(BASE / "shared_web.db"))).expanduser()
 DEV_SECRET_FILE = BASE / ".dev_secret"
 LOCK = threading.Lock()
+RATE_LOCK = threading.Lock()
+RATE_BUCKETS = {}
+RATE_WINDOW = 60
+RATE_LIMIT_GENERAL = 120
+RATE_LIMIT_AUTH = 12
+MAX_BODY_BYTES = 64 * 1024
+
+def client_key():
+    return request.remote_addr or "unknown"
+
+def rate_limit(limit, bucket):
+    now = time.time()
+    key = (client_key(), bucket)
+    with RATE_LOCK:
+        start, count = RATE_BUCKETS.get(key, (now, 0))
+        if now - start >= RATE_WINDOW:
+            start, count = now, 0
+        count += 1
+        RATE_BUCKETS[key] = (start, count)
+        if count > limit:
+            retry = max(1, int(RATE_WINDOW - (now - start)))
+            return jsonify({"error":"Muitas tentativas. Tente novamente mais tarde.","retry_after":retry}), 429, {"Retry-After":str(retry)}
+    return None
+
 
 app = Flask(__name__, static_folder=str(WEB), static_url_path="")
 app.config["JSON_AS_ASCII"] = False
@@ -21,6 +45,28 @@ app.config["PERMANENT_SESSION_LIFETIME"] = 60 * 60 * 8
 ALLOWED_ORIGINS = [x.strip() for x in os.environ.get("BARBEARIA_ALLOWED_ORIGINS", "https://primeiromilhao.github.io").split(",") if x.strip()]
 CORS(app, origins=ALLOWED_ORIGINS, supports_credentials=True, allow_headers=["Content-Type","X-CSRF-Token"], methods=["GET","POST","OPTIONS"])
 app.secret_key = os.environ.get("BARBEARIA_SESSION_SECRET") or secrets.token_hex(32)
+app.config["MAX_CONTENT_LENGTH"] = MAX_BODY_BYTES
+
+@app.before_request
+def security_request_guard():
+    if request.path.startswith("/api/"):
+        limit = RATE_LIMIT_AUTH if request.path in {
+            "/api/dev/login", "/api/owner/device/register",
+            "/api/owner/challenge", "/api/owner/login", "/api/client/register"
+        } else RATE_LIMIT_GENERAL
+        limited = rate_limit(limit, request.path)
+        if limited:
+            return limited
+
+@app.after_request
+def security_headers(response):
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    if request.path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-store"
+    return response
 
 def get_owner_secret():
     return os.environ.get("BARBEARIA_OWNER_PASSWORD", "").strip()
