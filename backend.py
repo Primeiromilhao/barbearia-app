@@ -1,7 +1,9 @@
 from flask import Flask, request, jsonify, send_from_directory, session
 from flask_cors import CORS
 from pathlib import Path
-import sqlite3, threading, time, os, secrets
+import sqlite3, threading, time, os, secrets, json, base64, hashlib
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import ec
 
 BASE = Path(__file__).resolve().parent
 WEB = BASE / "web"
@@ -17,7 +19,7 @@ app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["PERMANENT_SESSION_LIFETIME"] = 60 * 60 * 8
 
 ALLOWED_ORIGINS = [x.strip() for x in os.environ.get("BARBEARIA_ALLOWED_ORIGINS", "https://primeiromilhao.github.io").split(",") if x.strip()]
-CORS(app, origins=ALLOWED_ORIGINS, supports_credentials=True, allow_headers=["Content-Type"], methods=["GET","POST","OPTIONS"])
+CORS(app, origins=ALLOWED_ORIGINS, supports_credentials=True, allow_headers=["Content-Type","X-CSRF-Token"], methods=["GET","POST","OPTIONS"])
 app.secret_key = os.environ.get("BARBEARIA_SESSION_SECRET") or secrets.token_hex(32)
 
 def get_owner_secret():
@@ -67,6 +69,15 @@ def init_db():
         CREATE TABLE IF NOT EXISTS audit_log(
           id INTEGER PRIMARY KEY AUTOINCREMENT, actor_type TEXT NOT NULL, actor_id TEXT NOT NULL,
           action TEXT NOT NULL, target_type TEXT, target_id TEXT, metadata TEXT, created_at REAL NOT NULL);
+        CREATE TABLE IF NOT EXISTS owners(
+          id INTEGER PRIMARY KEY AUTOINCREMENT, phone TEXT NOT NULL UNIQUE,
+          password_hash TEXT NOT NULL, active INTEGER NOT NULL DEFAULT 1,
+          max_devices INTEGER NOT NULL DEFAULT 1, created_at REAL NOT NULL);
+        CREATE TABLE IF NOT EXISTS owner_devices(
+          id INTEGER PRIMARY KEY AUTOINCREMENT, owner_id INTEGER NOT NULL,
+          device_id TEXT NOT NULL UNIQUE, public_jwk TEXT NOT NULL,
+          created_at REAL NOT NULL, last_seen REAL,
+          FOREIGN KEY(owner_id) REFERENCES owners(id) ON DELETE CASCADE);
         """)
         services = [(1,"Corte de Cabelo",15,30),(2,"Barba",10,20),(3,"Corte + Barba",22,50)]
         c.executemany("INSERT OR IGNORE INTO services VALUES(?,?,?,?)", services)
@@ -99,11 +110,48 @@ def queue_notifications(c, appt, action):
         c.execute("""INSERT INTO notifications(appointment_id,channel,status,phone,message,created_at)
                      VALUES(?,?,?,?,?,?)""",(appt["id"],channel,"pending",appt["phone"],msg,time.time()))
 
+def b64u_decode(value):
+    return base64.urlsafe_b64decode(value + "=" * (-len(value) % 4))
+
+def hash_password(password, salt=None):
+    salt = salt or secrets.token_bytes(16)
+    digest = hashlib.scrypt(password.encode("utf-8"), salt=salt, n=2**14, r=8, p=1, dklen=32)
+    return "s1$" + base64.urlsafe_b64encode(salt).decode().rstrip("=") + "$" + base64.urlsafe_b64encode(digest).decode().rstrip("=")
+
+def verify_password(password, encoded):
+    try:
+        _, salt_b64, digest_b64 = encoded.split("$", 2)
+        expected = hash_password(password, b64u_decode(salt_b64)).split("$", 2)[2]
+        return secrets.compare_digest(expected, digest_b64)
+    except Exception:
+        return False
+
+def public_key_from_jwk(jwk):
+    if not isinstance(jwk, dict) or jwk.get("kty") != "EC" or jwk.get("crv") != "P-256":
+        raise ValueError("Chave de dispositivo inválida")
+    x = int.from_bytes(b64u_decode(jwk["x"]), "big")
+    y = int.from_bytes(b64u_decode(jwk["y"]), "big")
+    return ec.EllipticCurvePublicNumbers(x, y, ec.SECP256R1()).public_key()
+
+def verify_device_signature(public_jwk, challenge_b64, signature_b64):
+    key = public_key_from_jwk(public_jwk)
+    key.verify(b64u_decode(signature_b64), b64u_decode(challenge_b64), ec.ECDSA(hashes.SHA256()))
+
+def require_csrf():
+    token=session.get("csrf_token")
+    supplied=request.headers.get("X-CSRF-Token","")
+    if not token or not supplied or not secrets.compare_digest(token,supplied):
+        return jsonify({"error":"Proteção CSRF inválida"}),403
+    return None
+
 def require_dev(fn):
     from functools import wraps
     @wraps(fn)
     def wrapper(*args,**kwargs):
         if not session.get("dev_auth"): return jsonify({"error":"Acesso de desenvolvedor necessário"}),401
+        if request.method=="POST":
+            csrf=require_csrf()
+            if csrf:return csrf
         return fn(*args,**kwargs)
     return wrapper
 
@@ -114,6 +162,9 @@ def require_client(fn):
         phone = session.get("client_phone")
         if not phone:
             return jsonify({"error":"Autenticação do cliente necessária"}),401
+        if request.method=="POST":
+            csrf=require_csrf()
+            if csrf:return csrf
         return fn(*args,**kwargs)
     return wrapper
 
@@ -123,6 +174,9 @@ def require_owner(fn):
     def wrapper(*args,**kwargs):
         if not (session.get("owner_auth") or session.get("dev_auth")):
             return jsonify({"error":"Autenticação do proprietário necessária"}),401
+        if request.method=="POST":
+            csrf=require_csrf()
+            if csrf:return csrf
         return fn(*args,**kwargs)
     return wrapper
 
@@ -138,6 +192,13 @@ def assets(path): return send_from_directory(WEB,path)
 @app.get("/api/health")
 def health(): return jsonify({"status":"ok","database":str(DB),"mode":"remote-shared-backend"})
 
+@app.get("/api/csrf")
+def csrf_endpoint():
+    if not (session.get("client_phone") or session.get("owner_auth") or session.get("dev_auth")):
+        return jsonify({"error":"Autenticação necessária"}),401
+    session["csrf_token"]=secrets.token_urlsafe(32)
+    return jsonify({"csrf_token":session["csrf_token"]})
+
 @app.post("/api/client/register")
 def register():
     data=request.get_json(force=True); name=str(data.get("name","")).strip(); phone=str(data.get("phone","")).strip()
@@ -151,7 +212,7 @@ def register():
         else:
             c.execute("INSERT INTO clients(name,phone,created_at) VALUES(?,?,?)",(name,phone,time.time()))
         r=c.execute("SELECT id,name,phone FROM clients WHERE phone=?",(phone,)).fetchone()
-    session["client_phone"]=phone; session.permanent=True
+    session["client_phone"]=phone; session["csrf_token"]=secrets.token_urlsafe(32); session.permanent=True
     return jsonify(rowdict(r))
 
 @app.get("/api/services")
@@ -265,19 +326,70 @@ def client_logout():
 def client_me():
     return jsonify({"authenticated":bool(session.get("client_phone")), "phone":session.get("client_phone")})
 
+@app.post("/api/dev/owners")
+@require_dev
+def dev_create_owner():
+    data=request.get_json(force=True); phone=str(data.get("phone","")).strip(); password=str(data.get("password","")); max_devices=int(data.get("max_devices",1))
+    if not phone or len(password) < 12: return jsonify({"error":"Telefone e senha de no mínimo 12 caracteres são obrigatórios"}),400
+    if max_devices < 1 or max_devices > 20: return jsonify({"error":"Número de dispositivos inválido"}),400
+    with LOCK, db() as c:
+        try:
+            cur=c.execute("INSERT INTO owners(phone,password_hash,max_devices,created_at) VALUES(?,?,?,?)",(phone,hash_password(password),max_devices,time.time()))
+        except sqlite3.IntegrityError:
+            return jsonify({"error":"Telefone do proprietário já registrado"}),409
+        audit(c,"owner_created","owner",cur.lastrowid,{"phone":phone,"max_devices":max_devices})
+        return jsonify({"id":cur.lastrowid,"phone":phone,"max_devices":max_devices}),201
+
+@app.post("/api/owner/device/register")
+def owner_device_register():
+    data=request.get_json(force=True); phone=str(data.get("phone","")).strip(); password=str(data.get("password","")); device_id=str(data.get("device_id","")).strip(); public_jwk=data.get("public_jwk")
+    if not all([phone,password,device_id,public_jwk]): return jsonify({"error":"Dados de ativação incompletos"}),400
+    try: public_key_from_jwk(public_jwk)
+    except Exception: return jsonify({"error":"Chave pública de dispositivo inválida"}),400
+    with LOCK, db() as c:
+        owner=c.execute("SELECT * FROM owners WHERE phone=? AND active=1",(phone,)).fetchone()
+        if not owner or not verify_password(password,owner["password_hash"]): return jsonify({"error":"Credencial inválida"}),401
+        existing=c.execute("SELECT owner_id FROM owner_devices WHERE device_id=?",(device_id,)).fetchone()
+        if existing and existing["owner_id"] != owner["id"]: return jsonify({"error":"Dispositivo já vinculado a outro proprietário"}),409
+        count=c.execute("SELECT COUNT(*) n FROM owner_devices WHERE owner_id=?",(owner["id"],)).fetchone()["n"]
+        if not existing and count >= owner["max_devices"]: return jsonify({"error":"Limite de dispositivos atingido"}),409
+        if existing:
+            c.execute("UPDATE owner_devices SET public_jwk=?,last_seen=? WHERE device_id=?",(json.dumps(public_jwk,separators=(",",":")),time.time(),device_id))
+        else:
+            c.execute("INSERT INTO owner_devices(owner_id,device_id,public_jwk,created_at,last_seen) VALUES(?,?,?,?,?)",(owner["id"],device_id,json.dumps(public_jwk,separators=(",",":")),time.time(),time.time()))
+        audit(c,"owner_device_registered","owner",owner["id"],{"device_id":device_id})
+    return jsonify({"registered":True,"phone":phone,"device_id":device_id})
+
+@app.post("/api/owner/challenge")
+def owner_challenge():
+    data=request.get_json(force=True); phone=str(data.get("phone","")).strip(); device_id=str(data.get("device_id","")).strip()
+    with db() as c:
+        row=c.execute("SELECT o.id,o.phone,d.device_id FROM owners o JOIN owner_devices d ON d.owner_id=o.id WHERE o.phone=? AND o.active=1 AND d.device_id=?",(phone,device_id)).fetchone()
+    if not row: return jsonify({"error":"Proprietário ou dispositivo não autorizado"}),401
+    challenge=secrets.token_bytes(32); challenge_b64=base64.urlsafe_b64encode(challenge).decode().rstrip("=")
+    session["owner_challenge"]=challenge_b64; session["owner_challenge_device_id"]=device_id; session["owner_challenge_expires"]=time.time()+120
+    return jsonify({"challenge":challenge_b64})
+
 @app.post("/api/owner/login")
 def owner_login():
-    data=request.get_json(force=True); password=str(data.get("password",""))
-    secret=get_owner_secret()
-    if not secret or not secrets.compare_digest(password,secret):
-        return jsonify({"error":"Credencial inválida"}),401
-    session.clear(); session["owner_auth"]=True; session.permanent=True
-    with LOCK, db() as c: audit(c,"owner_login",actor_type="owner",actor_id="owner")
-    return jsonify({"authenticated":True})
+    data=request.get_json(force=True); phone=str(data.get("phone","")).strip(); device_id=str(data.get("device_id","")).strip(); signature=str(data.get("signature","")).strip()
+    challenge=session.get("owner_challenge")
+    if not challenge or session.get("owner_challenge_device_id") != device_id or time.time() > float(session.get("owner_challenge_expires",0)):
+        return jsonify({"error":"Desafio de autenticação ausente ou expirado"}),401
+    with LOCK, db() as c:
+        row=c.execute("SELECT o.id,o.phone,o.active,d.public_jwk FROM owners o JOIN owner_devices d ON d.owner_id=o.id WHERE o.phone=? AND o.active=1 AND d.device_id=?",(phone,device_id)).fetchone()
+        if not row: return jsonify({"error":"Proprietário ou dispositivo não autorizado"}),401
+        try: verify_device_signature(json.loads(row["public_jwk"]),challenge,signature)
+        except Exception: return jsonify({"error":"Assinatura do dispositivo inválida"}),401
+        c.execute("UPDATE owner_devices SET last_seen=? WHERE device_id=?",(time.time(),device_id))
+        audit(c,"owner_login",actor_type="owner",actor_id=phone,metadata={"device_id":device_id})
+    session.pop("owner_challenge", None); session.pop("owner_challenge_device_id", None); session.pop("owner_challenge_expires", None)
+    session.clear(); session["owner_auth"]=True; session["owner_id"]=row["id"]; session["owner_phone"]=row["phone"]; session["owner_device_id"]=device_id; session["csrf_token"]=secrets.token_urlsafe(32); session.permanent=True
+    return jsonify({"authenticated":True,"phone":row["phone"],"device_id":device_id})
 
 @app.get("/api/owner/me")
 def owner_me():
-    return jsonify({"authenticated":bool(session.get("owner_auth") or session.get("dev_auth"))})
+    return jsonify({"authenticated":bool(session.get("owner_auth") or session.get("dev_auth")),"phone":session.get("owner_phone"),"device_id":session.get("owner_device_id")})
 
 @app.post("/api/owner/logout")
 @require_owner
@@ -289,7 +401,7 @@ def dev_login():
     data=request.get_json(force=True); password=str(data.get("password",""))
     if not secrets.compare_digest(password,get_dev_secret()):
         return jsonify({"error":"Credencial inválida"}),401
-    session.clear(); session["dev_auth"]=True; session.permanent=True
+    session.clear(); session["dev_auth"]=True; session["csrf_token"]=secrets.token_urlsafe(32); session.permanent=True
     with LOCK, db() as c: audit(c,"developer_login")
     return jsonify({"authenticated":True})
 
