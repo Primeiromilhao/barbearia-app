@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Barbearia — modelo Agenda Clean">
+<title>Barbearia — Agenda Clean</title><link rel="stylesheet" href="styles.css"></head>
+<body><header><a href="#top" class="brand" aria-label="Início">Barbearia</a><nav aria-label="Navegação principal"><a href="#agendar">Agendar</a><a href="#meus-agendamentos">Meus horários</a></nav></header>
+<main id="top"><section class="hero"><span>Agendamento</span><h1>Barbearia</h1><p>Marque seu horário de forma simples, rápida e sem complicação.</p><a class="btn" href="#agendar">Agendar horário</a></section>
+<section id="agendar"><h2>Novo agendamento</h2><form id="booking-form">
+<label>Nome<input name="client" required placeholder="Seu nome"></label>
+<label>Serviço<select name="service" required><option value="">Escolha o serviço</option><option>Corte</option><option>Barba</option><option>Corte + Barba</option></select></label>
+<label>Data<input name="date" type="date" required></label>
+<label>Horário<select name="time" required><option value="">Escolha o horário</option><option>09:00</option><option>10:00</option><option>11:00</option><option>14:00</option><option>15:00</option><option>16:00</option><option>17:00</option><option>18:00</option></select></label>
+<button type="submit">Confirmar agendamento</button></form><p id="booking-status" role="status"></p></section>
+<section id="meus-agendamentos"><h2>Meu próximo horário</h2><div id="appointment-list"><p>Nenhum agendamento ainda.</p></div></section></main><footer>Gerado pela Planta-Mãe • Agenda Clean</footer><script src="app.js"></script></body></html>
