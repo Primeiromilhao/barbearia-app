@@ -5,13 +5,19 @@ import sqlite3, threading, time, os, secrets
 
 BASE = Path(__file__).resolve().parent
 WEB = BASE / "web"
-DB = BASE / "shared_web.db"
+DB = Path(os.environ.get("BARBEARIA_DB_PATH", str(BASE / "shared_web.db"))).expanduser()
 DEV_SECRET_FILE = BASE / ".dev_secret"
 LOCK = threading.Lock()
 
 app = Flask(__name__, static_folder=str(WEB), static_url_path="")
-CORS(app, supports_credentials=True)
 app.config["JSON_AS_ASCII"] = False
+app.config["SESSION_COOKIE_SAMESITE"] = "None"
+app.config["SESSION_COOKIE_SECURE"] = True
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["PERMANENT_SESSION_LIFETIME"] = 60 * 60 * 8
+
+ALLOWED_ORIGINS = [x.strip() for x in os.environ.get("BARBEARIA_ALLOWED_ORIGINS", "https://primeiromilhao.github.io").split(",") if x.strip()]
+CORS(app, origins=ALLOWED_ORIGINS, supports_credentials=True, allow_headers=["Content-Type"], methods=["GET","POST","OPTIONS"])
 app.secret_key = os.environ.get("BARBEARIA_SESSION_SECRET") or secrets.token_hex(32)
 
 def get_dev_secret():
@@ -108,7 +114,7 @@ def dev_page(): return send_from_directory(WEB,"dev.html")
 def assets(path): return send_from_directory(WEB,path)
 
 @app.get("/api/health")
-def health(): return jsonify({"status":"ok","database":str(DB),"mode":"local-shared-backend"})
+def health(): return jsonify({"status":"ok","database":str(DB),"mode":"remote-shared-backend"})
 
 @app.post("/api/client/register")
 def register():
@@ -294,7 +300,10 @@ def dev_test_reset():
         audit(c,"test_environment_reset")
     return jsonify({"status":"reset","environment":"local test database","message":"Dados de teste removidos"})
 
+init_db()
+
 if __name__=="__main__":
-    init_db()
-    print(f"BARBEARIA_BACKEND http://127.0.0.1:8787 DB={DB}")
-    app.run(host="127.0.0.1",port=8787,debug=False)
+    port=int(os.environ.get("PORT","8787"))
+    host=os.environ.get("HOST","127.0.0.1")
+    print(f"BARBEARIA_BACKEND http://{host}:{port} DB={DB}")
+    app.run(host=host,port=port,debug=False)

@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: barbearia-api
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn backend:app --bind 0.0.0.0:$PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13
+      - key: BARBEARIA_ALLOWED_ORIGINS
+        value: https://primeiromilhao.github.io
+      - key: BARBEARIA_SESSION_SECRET
+        generateValue: true
+      - key: BARBEARIA_DEV_PASSWORD
+        sync: false
