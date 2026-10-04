@@ -20,6 +20,9 @@ ALLOWED_ORIGINS = [x.strip() for x in os.environ.get("BARBEARIA_ALLOWED_ORIGINS"
 CORS(app, origins=ALLOWED_ORIGINS, supports_credentials=True, allow_headers=["Content-Type"], methods=["GET","POST","OPTIONS"])
 app.secret_key = os.environ.get("BARBEARIA_SESSION_SECRET") or secrets.token_hex(32)
 
+def get_owner_secret():
+    return os.environ.get("BARBEARIA_OWNER_PASSWORD", "").strip()
+
 def get_dev_secret():
     value = os.environ.get("BARBEARIA_DEV_PASSWORD")
     if value:
@@ -104,6 +107,15 @@ def require_dev(fn):
         return fn(*args,**kwargs)
     return wrapper
 
+def require_owner(fn):
+    from functools import wraps
+    @wraps(fn)
+    def wrapper(*args,**kwargs):
+        if not (session.get("owner_auth") or session.get("dev_auth")):
+            return jsonify({"error":"Autenticação do proprietário necessária"}),401
+        return fn(*args,**kwargs)
+    return wrapper
+
 @app.get("/")
 def index(): return send_from_directory(WEB,"index.html")
 @app.get("/proprietario.html")
@@ -166,6 +178,7 @@ def cancel_appointment(aid):
     return jsonify(rowdict(appt))
 
 @app.get("/api/owner/appointments")
+@require_owner
 def owner_appointments():
     status=request.args.get("status")
     q="""SELECT a.id,a.date,a.time,a.status,a.created_at,a.updated_at,cl.name client,cl.phone,
@@ -178,6 +191,7 @@ def owner_appointments():
     return jsonify([rowdict(x) for x in rows])
 
 @app.get("/api/owner/clients")
+@require_owner
 def owner_clients():
     with db() as c:
         rows=c.execute("""SELECT cl.id,cl.name,cl.phone,cl.created_at,COUNT(a.id) appointments
@@ -186,6 +200,7 @@ def owner_clients():
     return jsonify([rowdict(x) for x in rows])
 
 @app.post("/api/owner/appointments/<int:aid>/confirm")
+@require_owner
 def confirm_appointment(aid):
     with LOCK, db() as c:
         appt=appointment_row(c,aid)
@@ -200,6 +215,7 @@ def confirm_appointment(aid):
     return jsonify({"appointment":rowdict(appt),"notifications":["whatsapp","sms"],"notification_status":"pending"})
 
 @app.post("/api/owner/appointments/<int:aid>/reject")
+@require_owner
 def reject_appointment(aid):
     with LOCK, db() as c:
         appt=appointment_row(c,aid)
@@ -210,11 +226,31 @@ def reject_appointment(aid):
     return jsonify({"appointment":rowdict(appt),"notifications":["whatsapp","sms"],"notification_status":"pending"})
 
 @app.get("/api/notifications")
+@require_owner
 def notifications():
     with db() as c: rows=c.execute("SELECT * FROM notifications ORDER BY id DESC").fetchall()
     return jsonify([rowdict(x) for x in rows])
 
 # ---------- DEVELOPER CONSOLE ----------
+@app.post("/api/owner/login")
+def owner_login():
+    data=request.get_json(force=True); password=str(data.get("password",""))
+    secret=get_owner_secret()
+    if not secret or not secrets.compare_digest(password,secret):
+        return jsonify({"error":"Credencial inválida"}),401
+    session.clear(); session["owner_auth"]=True; session.permanent=True
+    with LOCK, db() as c: audit(c,"owner_login",actor_type="owner",actor_id="owner")
+    return jsonify({"authenticated":True})
+
+@app.get("/api/owner/me")
+def owner_me():
+    return jsonify({"authenticated":bool(session.get("owner_auth") or session.get("dev_auth"))})
+
+@app.post("/api/owner/logout")
+@require_owner
+def owner_logout():
+    session.clear(); return jsonify({"authenticated":False})
+
 @app.post("/api/dev/login")
 def dev_login():
     data=request.get_json(force=True); password=str(data.get("password",""))
