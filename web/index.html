@@ -1,13 +1,72 @@
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="Barbearia — modelo Agenda Clean">
-<title>Barbearia — Agenda Clean</title><link rel="stylesheet" href="styles.css"></head>
-<body><header><a href="#top" class="brand" aria-label="Início">Barbearia</a><nav aria-label="Navegação principal"><a href="#agendar">Agendar</a><a href="#meus-agendamentos">Meus horários</a></nav></header>
-<main id="top"><section class="hero"><span>Agendamento</span><h1>Barbearia</h1><p>Marque seu horário de forma simples, rápida e sem complicação.</p><a class="btn" href="#agendar">Agendar horário</a></section>
-<section id="agendar"><h2>Novo agendamento</h2><form id="booking-form">
-<label>Nome<input name="client" required placeholder="Seu nome"></label>
-<label>Serviço<select name="service" required><option value="">Escolha o serviço</option><option>Corte</option><option>Barba</option><option>Corte + Barba</option></select></label>
-<label>Data<input name="date" type="date" required></label>
-<label>Horário<select name="time" required><option value="">Escolha o horário</option><option>09:00</option><option>10:00</option><option>11:00</option><option>14:00</option><option>15:00</option><option>16:00</option><option>17:00</option><option>18:00</option></select></label>
-<button type="submit">Confirmar agendamento</button></form><p id="booking-status" role="status"></p></section>
-<section id="meus-agendamentos"><h2>Meu próximo horário</h2><div id="appointment-list"><p>Nenhum agendamento ainda.</p></div></section></main><footer>Gerado pela Planta-Mãe • Agenda Clean</footer><script src="app.js"></script></body></html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<meta name="description" content="Barbearia — aplicativo de agendamento">
+<title>Barbearia • Agendamento</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app-shell">
+<header class="topbar">
+  <a href="#inicio" class="brand" aria-label="Início"><span class="brand-mark">✂</span><span>BARBEARIA<small>ESTILO ÚNICO</small></span></a>
+  <nav aria-label="Navegação principal"><a class="active" href="#inicio">Início</a><a href="#agendar">Agendar</a><a href="#historico">Histórico</a><a href="#perfil">Perfil</a></nav>
+</header>
+
+<main id="inicio">
+<section class="welcome hero-card">
+  <div class="hero-photo" aria-hidden="true"><span>✂</span></div>
+  <div class="hero-copy">
+    <p class="eyebrow">APLICATIVO DO CLIENTE</p>
+    <h1>Seu estilo.<br><strong>Seu horário.</strong></h1>
+    <p>Agende seu corte de forma simples, rápida e sem complicação.</p>
+    <a class="gold-btn" href="#agendar">Agendar agora</a>
+  </div>
+</section>
+
+<section class="client-menu">
+  <div class="section-heading"><div><span class="eyebrow">ÁREA DO CLIENTE</span><h2>Olá! O que você deseja?</h2></div></div>
+  <div class="menu-grid">
+    <a class="menu-card" href="#agendar"><span>◫</span><b>Novo<br>agendamento</b></a>
+    <a class="menu-card" href="#historico"><span>▣</span><b>Meus<br>agendamentos</b></a>
+    <a class="menu-card" href="#perfil"><span>♙</span><b>Meus<br>dados</b></a>
+    <a class="menu-card" href="#contato"><span>☏</span><b>Falar com<br>a barbearia</b></a>
+  </div>
+</section>
+
+<section id="agendar" class="booking">
+  <div class="section-heading"><span class="eyebrow">NOVO AGENDAMENTO</span><h2>Escolha o serviço</h2><p>Depois selecione a data e um horário disponível.</p></div>
+  <form id="booking-form">
+    <div class="service-grid">
+      <label class="service-card"><input type="radio" name="service" value="Corte de Cabelo" required><span class="service-photo photo-1"></span><span><b>Corte de Cabelo</b><small>€ 15,00 · 30 min</small></span></label>
+      <label class="service-card"><input type="radio" name="service" value="Barba"><span class="service-photo photo-2"></span><span><b>Barba</b><small>€ 10,00 · 20 min</small></span></label>
+      <label class="service-card"><input type="radio" name="service" value="Corte + Barba"><span class="service-photo photo-3"></span><span><b>Corte + Barba</b><small>€ 22,00 · 50 min</small></span></label>
+      <label class="service-card"><input type="radio" name="service" value="Sobrancelha"><span class="service-photo photo-4"></span><span><b>Sobrancelha</b><small>€ 7,00 · 15 min</small></span></label>
+    </div>
+    <div class="booking-fields">
+      <label>Nome<input name="client" required placeholder="Seu nome"></label>
+      <label>Telefone<input name="phone" required inputmode="tel" placeholder="+351 9xx xxx xxx"></label>
+      <label>Data<input name="date" type="date" required></label>
+      <label>Horário<select name="time" required><option value="">Escolha o horário</option><option>09:00</option><option>10:00</option><option>11:00</option><option>13:00</option><option>14:00</option><option>15:00</option><option>16:00</option><option>17:00</option><option>18:00</option></select></label>
+    </div>
+    <button class="gold-btn full" type="submit">Continuar e confirmar</button>
+    <p id="booking-status" role="status" aria-live="polite"></p>
+  </form>
+</section>
+
+<section id="historico" class="history">
+  <div class="section-heading"><span class="eyebrow">SEUS HORÁRIOS</span><h2>Meus agendamentos</h2></div>
+  <div id="appointment-list" class="appointment-list"><p class="empty">Nenhum agendamento ainda.</p></div>
+</section>
+
+<section id="perfil" class="profile"><div><span class="eyebrow">PERFIL</span><h2>Seus dados</h2><p>Os dados ficam guardados neste dispositivo para facilitar seus próximos agendamentos.</p></div></section>
+<section id="contato" class="profile"><div><span class="eyebrow">ATENDIMENTO</span><h2>Falar com a barbearia</h2><p>Entre em contacto para dúvidas, alterações ou informações.</p></div></section>
+</main>
+
+<footer><span>BARBEARIA · ESTILO ÚNICO</span><small>Aplicativo de agendamento</small></footer>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
