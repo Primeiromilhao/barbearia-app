@@ -1,0 +1,72 @@
+{
+  "status": "READY",
+  "qa": [
+    [
+      "HTML",
+      true
+    ],
+    [
+      "Viewport",
+      true
+    ],
+    [
+      "Booking UI",
+      true
+    ],
+    [
+      "CSS",
+      true
+    ],
+    [
+      "JavaScript",
+      true
+    ],
+    [
+      "Links",
+      true
+    ],
+    [
+      "Assets",
+      true
+    ]
+  ],
+  "local_test": {
+    "status": "PASS",
+    "tests": [
+      {
+        "name": "cadastro_cliente",
+        "ok": true
+      },
+      {
+        "name": "agendamento_confirmado",
+        "ok": true
+      },
+      {
+        "name": "confirmacao_salva",
+        "ok": true
+      },
+      {
+        "name": "bloqueio_horario_repetido",
+        "ok": true
+      },
+      {
+        "name": "cancelamento_libera_horario",
+        "ok": true
+      },
+      {
+        "name": "remarcacao_libera_antigo",
+        "ok": true
+      },
+      {
+        "name": "novo_horario_reservado",
+        "ok": true
+      }
+    ]
+  },
+  "dual_apps_test": "PASS",
+  "generated_at": "2026-10-04T06:35:19.765264",
+  "project": "Barbearia",
+  "segment": "Barbearia",
+  "type": "Aplicativo",
+  "template": "App Agendamento"
+}

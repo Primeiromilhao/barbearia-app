@@ -1,0 +1,22 @@
+{
+  "mission_id": "MSN_1791092111713_06f4fe",
+  "agent": "FACTORY_AGENT",
+  "business": "Barbearia",
+  "project": "F:\\Fábrica\\Teste\\Barbearia",
+  "production_pipeline": "PASS",
+  "dual_client_owner_test": "PASS",
+  "dual_test_output": "..                                                                       [100%]\n2 passed in 1.14s",
+  "local_booking_test": "PASS",
+  "local_test_output": "{\n  \"status\": \"PASS\",\n  \"tests\": [\n    {\n      \"name\": \"cadastro_cliente\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"agendamento_confirmado\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"confirmacao_salva\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"bloqueio_horario_repetido\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"cancelamento_libera_horario\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"remarcacao_libera_antigo\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"novo_horario_reservado\",\n      \"ok\": true\n    }\n  ]\n}",
+  "artifacts": {
+    "app_cliente.py": true,
+    "app_proprietario.py": true,
+    "shared_db.py": true,
+    "web/index.html": true,
+    "web/styles.css": true,
+    "web/app.js": true,
+    "production_state.json": true,
+    "release_report.json": true
+  },
+  "status": "SUCCESS"
+}

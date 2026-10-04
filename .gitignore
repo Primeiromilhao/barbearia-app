@@ -1,0 +1,7 @@
+__pycache__/
+.pytest_cache/
+*.pyc
+*.pyo
+shared.db
+*.log
+_executor_qa/

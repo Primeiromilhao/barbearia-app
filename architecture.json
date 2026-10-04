@@ -1,0 +1,12 @@
+{
+  "type": "Aplicativo",
+  "segment": "Barbearia",
+  "template": "App Agendamento",
+  "navigation": [
+    "Início",
+    "Serviços",
+    "Sobre",
+    "Contato"
+  ],
+  "interactive_elements": "mapped"
+}

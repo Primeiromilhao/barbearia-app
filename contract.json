@@ -1,0 +1,106 @@
+{
+  "entities": [
+    "client",
+    "barber",
+    "service",
+    "appointment",
+    "waitlist"
+  ],
+  "required_fields": [
+    "client",
+    "service",
+    "date",
+    "start_time",
+    "duration",
+    "status"
+  ],
+  "optional_fields": [
+    "barber",
+    "notes",
+    "deposit"
+  ],
+  "workflows": [
+    "book",
+    "confirm",
+    "reschedule",
+    "cancel",
+    "complete",
+    "no_show",
+    "waitlist"
+  ],
+  "business_rules": [
+    "service_duration_blocks_interval",
+    "barber_availability",
+    "chair_no_double_booking",
+    "business_hours",
+    "blocked_time"
+  ],
+  "resources": [
+    "barber",
+    "chair"
+  ],
+  "availability_rules": [
+    "business_hours",
+    "professional_shifts",
+    "time_off",
+    "blocked_time",
+    "resource_availability"
+  ],
+  "statuses": [
+    "requested",
+    "confirmed",
+    "in_progress",
+    "completed",
+    "cancelled",
+    "no_show"
+  ],
+  "notifications": [
+    "confirmation",
+    "reminder",
+    "change",
+    "cancellation",
+    "waitlist_open"
+  ],
+  "customer_views": [
+    "services",
+    "available_times",
+    "booking_confirmation",
+    "my_appointments"
+  ],
+  "operator_views": [
+    "daily_agenda",
+    "appointments",
+    "availability",
+    "customer_details"
+  ],
+  "validation_rules": [
+    "required_fields",
+    "duration_overlap",
+    "availability",
+    "resource_conflict"
+  ],
+  "exception_cases": [
+    "long_service",
+    "break",
+    "holiday",
+    "no_show",
+    "last_minute_cancellation"
+  ],
+  "privacy_legal_notes": [
+    "minimize_personal_data",
+    "consent_for_notifications"
+  ],
+  "metrics": [
+    "appointments",
+    "occupancy",
+    "cancellations",
+    "no_shows"
+  ],
+  "acceptance_tests": [
+    "duration_overlap",
+    "break_blocks_slot",
+    "resource_conflict",
+    "cancel_status",
+    "waitlist"
+  ]
+}

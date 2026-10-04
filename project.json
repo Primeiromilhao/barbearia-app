@@ -1,0 +1,22 @@
+{
+  "business": "Barbearia",
+  "niche": "barbearia",
+  "module": "Calendário / Agendamento",
+  "template": {
+    "id": "app_booking",
+    "name": "Agenda Clean",
+    "description": "Agenda objetiva com horários e confirmação.",
+    "palette": "Mint + Emerald",
+    "font": "Inter"
+  },
+  "factory": "Planta-Mãe",
+  "executor_ready": true,
+  "vertical_contract_version": "2.0",
+  "acceptance_tests": [
+    "duration_overlap",
+    "break_blocks_slot",
+    "resource_conflict",
+    "cancel_status",
+    "waitlist"
+  ]
+}

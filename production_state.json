@@ -1,0 +1,250 @@
+{
+  "project": "Barbearia",
+  "type": "Aplicativo",
+  "segment": "Barbearia",
+  "template": "App Agendamento",
+  "progress": 100,
+  "phases": {
+    "01_ARQUITETURA": "SUCCESS",
+    "02_UX": "SUCCESS",
+    "03_DESIGN_SYSTEM": "SUCCESS",
+    "04_FRONTEND": "SUCCESS",
+    "05_FUNCIONALIDADES": "SUCCESS",
+    "06_INTEGRACOES": "SUCCESS",
+    "07_PWA_MOBILE": "SUCCESS",
+    "08_SEGURANCA": "SUCCESS",
+    "09_PERFORMANCE": "SUCCESS",
+    "10_QA": "SUCCESS",
+    "11_REGRESSAO": "SUCCESS",
+    "12_RELEASE": "SUCCESS"
+  },
+  "events": [
+    {
+      "event": "RUN_CREATED",
+      "details": "Barbearia",
+      "timestamp": "2026-10-04T06:35:11.742804"
+    },
+    {
+      "event": "AGENT_STARTED",
+      "details": "Arquiteto — Define estrutura, navegação e pontos de ação.",
+      "timestamp": "2026-10-04T06:35:11.749514"
+    },
+    {
+      "event": "GATE_PASSED",
+      "details": "01_ARQUITETURA",
+      "timestamp": "2026-10-04T06:35:11.757851"
+    },
+    {
+      "event": "AGENT_STARTED",
+      "details": "UX — Valida fluxo e usabilidade.",
+      "timestamp": "2026-10-04T06:35:11.769854"
+    },
+    {
+      "event": "GATE_PASSED",
+      "details": "02_UX",
+      "timestamp": "2026-10-04T06:35:11.774851"
+    },
+    {
+      "event": "AGENT_STARTED",
+      "details": "Designer — Consolida tipografia, cores, espaçamento e responsividade.",
+      "timestamp": "2026-10-04T06:35:11.785849"
+    },
+    {
+      "event": "GATE_PASSED",
+      "details": "03_DESIGN_SYSTEM",
+      "timestamp": "2026-10-04T06:35:11.791445"
+    },
+    {
+      "event": "AGENT_STARTED",
+      "details": "Frontend — Garante HTML, CSS e JavaScript funcionais.",
+      "timestamp": "2026-10-04T06:35:11.801707"
+    },
+    {
+      "event": "GATE_PASSED",
+      "details": "04_FRONTEND",
+      "timestamp": "2026-10-04T06:35:11.807951"
+    },
+    {
+      "event": "AGENT_STARTED",
+      "details": "Funcional — Confere formulários, ações, navegação e conteúdo.",
+      "timestamp": "2026-10-04T06:35:11.818372"
+    },
+    {
+      "event": "GATE_PASSED",
+      "details": "05_FUNCIONALIDADES",
+      "timestamp": "2026-10-04T06:35:11.838178"
+    },
+    {
+      "event": "AGENT_STARTED",
+      "details": "Integrações — Confere links externos, WhatsApp, email, telefone e assets.",
+      "timestamp": "2026-10-04T06:35:11.847518"
+    },
+    {
+      "event": "GATE_PASSED",
+      "details": "06_INTEGRACOES",
+      "timestamp": "2026-10-04T06:35:11.852517"
+    },
+    {
+      "event": "AGENT_STARTED",
+      "details": "Mobile/PWA — Valida viewport e experiência mobile.",
+      "timestamp": "2026-10-04T06:35:11.861402"
+    },
+    {
+      "event": "GATE_PASSED",
+      "details": "07_PWA_MOBILE",
+      "timestamp": "2026-10-04T06:35:11.867706"
+    },
+    {
+      "event": "AGENT_STARTED",
+      "details": "Segurança — Confere ausência de caminhos perigosos e recursos locais.",
+      "timestamp": "2026-10-04T06:35:11.877049"
+    },
+    {
+      "event": "GATE_PASSED",
+      "details": "08_SEGURANCA",
+      "timestamp": "2026-10-04T06:35:11.882049"
+    },
+    {
+      "event": "AGENT_STARTED",
+      "details": "Performance — Verifica recursos, tamanho e carregamento local.",
+      "timestamp": "2026-10-04T06:35:11.892293"
+    },
+    {
+      "event": "GATE_PASSED",
+      "details": "09_PERFORMANCE",
+      "timestamp": "2026-10-04T06:35:11.898703"
+    },
+    {
+      "event": "AGENT_STARTED",
+      "details": "QA — Testa estrutura e elementos interativos.",
+      "timestamp": "2026-10-04T06:35:11.909028"
+    },
+    {
+      "event": "GATE_PASSED",
+      "details": "10_QA",
+      "timestamp": "2026-10-04T06:35:14.473600"
+    },
+    {
+      "event": "AGENT_STARTED",
+      "details": "Regressão — Repete os testes após as correções.",
+      "timestamp": "2026-10-04T06:35:14.484777"
+    },
+    {
+      "event": "GATE_PASSED",
+      "details": "11_REGRESSAO",
+      "timestamp": "2026-10-04T06:35:17.436236"
+    },
+    {
+      "event": "AGENT_STARTED",
+      "details": "Release — Gera pacote final e relatório de produção.",
+      "timestamp": "2026-10-04T06:35:17.448866"
+    },
+    {
+      "event": "GATE_PASSED",
+      "details": "12_RELEASE",
+      "timestamp": "2026-10-04T06:35:19.768263"
+    },
+    {
+      "event": "RUN_COMPLETED",
+      "details": "Todos os gates passaram.",
+      "timestamp": "2026-10-04T06:35:19.779764"
+    }
+  ],
+  "status": "COMPLETED",
+  "agents": [
+    {
+      "phase": "01_ARQUITETURA",
+      "agent": "Arquiteto",
+      "status": "SUCCESS",
+      "evidence": []
+    },
+    {
+      "phase": "02_UX",
+      "agent": "UX",
+      "status": "SUCCESS",
+      "evidence": [
+        "Fluxo principal presente."
+      ]
+    },
+    {
+      "phase": "03_DESIGN_SYSTEM",
+      "agent": "Designer",
+      "status": "SUCCESS",
+      "evidence": []
+    },
+    {
+      "phase": "04_FRONTEND",
+      "agent": "Frontend",
+      "status": "SUCCESS",
+      "evidence": []
+    },
+    {
+      "phase": "05_FUNCIONALIDADES",
+      "agent": "Funcional",
+      "status": "SUCCESS",
+      "evidence": []
+    },
+    {
+      "phase": "06_INTEGRACOES",
+      "agent": "Integrações",
+      "status": "SUCCESS",
+      "evidence": []
+    },
+    {
+      "phase": "07_PWA_MOBILE",
+      "agent": "Mobile/PWA",
+      "status": "SUCCESS",
+      "evidence": []
+    },
+    {
+      "phase": "08_SEGURANCA",
+      "agent": "Segurança",
+      "status": "SUCCESS",
+      "evidence": []
+    },
+    {
+      "phase": "09_PERFORMANCE",
+      "agent": "Performance",
+      "status": "SUCCESS",
+      "evidence": []
+    },
+    {
+      "phase": "10_QA",
+      "agent": "QA",
+      "status": "SUCCESS",
+      "evidence": [
+        "HTML: OK",
+        "Viewport: OK",
+        "Booking UI: OK",
+        "CSS: OK",
+        "JavaScript: OK",
+        "Links: OK",
+        "Assets: OK",
+        "LOCAL_PYTHON_SQLITE: OK",
+        "DUAL_CLIENT_OWNER: OK"
+      ]
+    },
+    {
+      "phase": "11_REGRESSAO",
+      "agent": "Regressão",
+      "status": "SUCCESS",
+      "evidence": [
+        "HTML: OK",
+        "Viewport: OK",
+        "Booking UI: OK",
+        "CSS: OK",
+        "JavaScript: OK",
+        "Links: OK",
+        "Assets: OK",
+        "LOCAL_PYTHON_SQLITE: OK",
+        "DUAL_CLIENT_OWNER: OK"
+      ]
+    },
+    {
+      "phase": "12_RELEASE",
+      "agent": "Release",
+      "status": "SUCCESS",
+      "evidence": []
+    }
+  ]
+}
