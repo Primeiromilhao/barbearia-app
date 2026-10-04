@@ -6,3 +6,5 @@ shared.db
 *.log
 _executor_qa/
 shared_web.db
+.dev_secret
+__pycache__/

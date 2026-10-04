@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Barbearia — Developer Console</title><link rel="stylesheet" href="styles.css"></head>
+<body><div class="app dev-app"><header class="topbar"><div class="brand">⚙ <span>BARBEARIA<small>DEVELOPER CONSOLE · ACESSO RESTRITO</small></span></div></header>
+<main class="screen active" style="display:block">
+<section id="loginView"><span class="eyebrow">DESENVOLVEDOR</span><h1>Console privada</h1><p>Acesso operacional separado das áreas de cliente e proprietário.</p>
+<label>Senha do desenvolvedor<input id="devPassword" type="password" autocomplete="current-password"></label><button class="gold full" id="loginBtn">ENTRAR</button><p id="loginStatus"></p></section>
+<section id="consoleView" hidden><div class="dev-head"><div><span class="eyebrow">CONTROLE TOTAL</span><h1>Painel do desenvolvedor</h1></div><button class="dark-btn" id="logoutBtn">Sair</button></div>
+<div class="menu-grid"><button onclick="loadAll()"><b>◉</b>Diagnóstico</button><button onclick="showClients()"><b>♙</b>Clientes</button><button onclick="showAppointments()"><b>◷</b>Agendamentos</button><button onclick="showNotifications()"><b>✉</b>Notificações</button><button onclick="showServices()"><b>▦</b>Serviços</button><button onclick="showAudit()"><b>▤</b>Auditoria</button><button onclick="resetTest()"><b>↺</b>Reset de teste</button><button onclick="showSystem()"><b>⚙</b>Sistema</button></div>
+<div id="devContent" class="summary" style="margin-top:18px">Escolha uma área acima.</div></section>
+</main></div><script src="dev.js"></script></body></html>
