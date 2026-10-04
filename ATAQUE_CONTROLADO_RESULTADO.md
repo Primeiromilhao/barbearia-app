@@ -57,3 +57,40 @@ Depois do deploy, repetir ataques online e só então validar vínculo seguro do
 6. Testar clonagem da instalação em segundo aparelho.
 7. Testar transferência de proprietário.
 8. Regressão completa.
+
+# ATUALIZAÇÃO — 2026-10-04 — CAMADA 2
+
+Executor: Gravity/Desktop Commander
+Commit: ef02bd7
+
+## CAMADA 2 EXECUTADA
+- Rate limiting por IP/rota.
+- Limite de payload HTTP de 64 KB.
+- Headers: nosniff, frame deny, referrer policy, permissions policy.
+- Cache-Control no-store para API.
+- Rate limit específico para autenticação/ativação.
+- Teste de brute force controlado: 13 tentativas de login, 13ª bloqueada com HTTP 429.
+- Regressão da bateria principal: PASS.
+- py_compile do backend: PASS.
+
+## RENDER
+Consulta online em 2026-10-04 ainda retorna:
+GET /api/owner/me -> HTTP 404.
+Portanto o host continua servindo uma versão anterior e o Release Gate permanece BLOQUEADO.
+Não foi declarado que a produção está segura.
+
+## ROADMAP COMERCIAL
+Registrado em ROADMAP_SEGURANCA_E_PRODUTO.md:
+- perfil visual/fotos;
+- portfólio antes/depois;
+- serviços e combos;
+- múltiplos barbeiros;
+- agenda avançada;
+- fidelização;
+- notificações/WhatsApp;
+- relatórios/caixa;
+- fotos com upload seguro;
+- multiunidade;
+- planos Base/Pro/Business/Enterprise.
+
+Regra: cada módulo futuro passa pelo Security Gate antes de publicação.
