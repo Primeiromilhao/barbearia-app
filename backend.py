@@ -107,6 +107,16 @@ def require_dev(fn):
         return fn(*args,**kwargs)
     return wrapper
 
+def require_client(fn):
+    from functools import wraps
+    @wraps(fn)
+    def wrapper(*args,**kwargs):
+        phone = session.get("client_phone")
+        if not phone:
+            return jsonify({"error":"Autenticação do cliente necessária"}),401
+        return fn(*args,**kwargs)
+    return wrapper
+
 def require_owner(fn):
     from functools import wraps
     @wraps(fn)
@@ -133,9 +143,15 @@ def register():
     data=request.get_json(force=True); name=str(data.get("name","")).strip(); phone=str(data.get("phone","")).strip()
     if not name or not phone: return jsonify({"error":"Nome e telefone são obrigatórios"}),400
     with LOCK, db() as c:
-        c.execute("""INSERT INTO clients(name,phone,created_at) VALUES(?,?,?)
-                     ON CONFLICT(phone) DO UPDATE SET name=excluded.name""",(name,phone,time.time()))
+        existing=c.execute("SELECT id,name,phone FROM clients WHERE phone=?",(phone,)).fetchone()
+        if existing and session.get("client_phone") != phone:
+            return jsonify({"error":"Cliente já registrado neste estabelecimento. Autenticação necessária."}),409
+        if existing:
+            c.execute("UPDATE clients SET name=? WHERE phone=?",(name,phone))
+        else:
+            c.execute("INSERT INTO clients(name,phone,created_at) VALUES(?,?,?)",(name,phone,time.time()))
         r=c.execute("SELECT id,name,phone FROM clients WHERE phone=?",(phone,)).fetchone()
+    session["client_phone"]=phone; session.permanent=True
     return jsonify(rowdict(r))
 
 @app.get("/api/services")
@@ -143,8 +159,11 @@ def services():
     with db() as c: return jsonify([rowdict(x) for x in c.execute("SELECT * FROM services ORDER BY id")])
 
 @app.post("/api/appointments")
+@require_client
 def create_appointment():
     data=request.get_json(force=True); phone=str(data.get("phone","")).strip()
+    if phone != session.get("client_phone"):
+        return jsonify({"error":"Acesso negado"}),403
     service_id=int(data.get("service_id",0)); date=str(data.get("date","")).strip(); tm=str(data.get("time","")).strip()
     if not all([phone,service_id,date,tm]): return jsonify({"error":"Dados incompletos"}),400
     with LOCK, db() as c:
@@ -158,8 +177,11 @@ def create_appointment():
     return jsonify(rowdict(appt)),201
 
 @app.get("/api/appointments")
+@require_client
 def client_appointments():
     phone=request.args.get("phone","").strip()
+    if phone != session.get("client_phone"):
+        return jsonify({"error":"Acesso negado"}),403
     with db() as c:
         rows=c.execute("""SELECT a.id,a.date,a.time,a.status,a.created_at,a.updated_at,
           cl.name client,cl.phone,s.id service_id,s.name service,s.price,s.duration
@@ -168,10 +190,12 @@ def client_appointments():
     return jsonify([rowdict(x) for x in rows])
 
 @app.post("/api/appointments/<int:aid>/cancel")
+@require_client
 def cancel_appointment(aid):
     with LOCK, db() as c:
-        r=c.execute("SELECT status FROM appointments WHERE id=?",(aid,)).fetchone()
+        r=c.execute("""SELECT a.status,cl.phone FROM appointments a JOIN clients cl ON cl.id=a.client_id WHERE a.id=?""",(aid,)).fetchone()
         if not r: return jsonify({"error":"Agendamento não encontrado"}),404
+        if r["phone"] != session.get("client_phone"): return jsonify({"error":"Acesso negado"}),403
         if r["status"] not in ("pending","confirmed"): return jsonify({"error":"Agendamento não pode ser cancelado"}),409
         c.execute("UPDATE appointments SET status='cancelled',updated_at=? WHERE id=?",(time.time(),aid))
         appt=appointment_row(c,aid); audit(c,"appointment_cancelled","appointment",aid)
@@ -232,6 +256,15 @@ def notifications():
     return jsonify([rowdict(x) for x in rows])
 
 # ---------- DEVELOPER CONSOLE ----------
+@app.post("/api/client/logout")
+def client_logout():
+    session.pop("client_phone", None)
+    return jsonify({"authenticated":False})
+
+@app.get("/api/client/me")
+def client_me():
+    return jsonify({"authenticated":bool(session.get("client_phone")), "phone":session.get("client_phone")})
+
 @app.post("/api/owner/login")
 def owner_login():
     data=request.get_json(force=True); password=str(data.get("password",""))

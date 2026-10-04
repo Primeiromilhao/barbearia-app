@@ -13,7 +13,7 @@ function show(n){
   if(n==="profile")$("profileData").textContent=user?user.name+" · "+user.phone:"";
   location.hash=n;
 }
-async function api(path,opt={}){const r=await fetch(API+path,{headers:{"Content-Type":"application/json"},...opt});const d=await r.json();if(!r.ok)throw new Error(d.error||"Erro");return d}
+async function api(path,opt={}){const r=await fetch(API+path,{credentials:"include",headers:{"Content-Type":"application/json"},...opt});const d=await r.json();if(!r.ok)throw new Error(d.error||"Erro");return d}
 document.addEventListener("click",e=>{
   const g=e.target.closest("[data-go]"),n=e.target.closest("[data-next]");
   if(g){e.preventDefault();show(g.dataset.go)}
