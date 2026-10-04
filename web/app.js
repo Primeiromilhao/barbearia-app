@@ -1,6 +1,6 @@
 const KEY="barbearia_agendamentos";let current="welcome",selectedTime="",selectedService="";
 const screens=[...document.querySelectorAll(".screen")],back=document.querySelector("#back");
-function show(name){current=name;screens.forEach(s=>s.classList.toggle("active",s.dataset.screen===name));back.style.visibility=name==="welcome"?"hidden":"visible";if(name==="datetime")renderTimes();if(name==="confirm")renderSummary();if(name==="history")renderList();location.hash=name}
+function show(name){current=name;document.querySelector(".app").dataset.screen=name;screens.forEach(s=>s.classList.toggle("active",s.dataset.screen===name));back.style.visibility=name==="welcome"?"hidden":"visible";if(name==="datetime")renderTimes();if(name==="confirm")renderSummary();if(name==="history")renderList();location.hash=name}
 document.addEventListener("click",e=>{const go=e.target.closest("[data-go]"),next=e.target.closest("[data-next]");if(go){e.preventDefault();show(go.dataset.go)}if(next){e.preventDefault();if(next.dataset.next==="datetime"&&!selectedService){alert("Escolha um serviço.");return}if(next.dataset.next==="confirm"&&!selectedTime){alert("Escolha um horário.");return}show(next.dataset.next)}});
 document.querySelectorAll(".service input").forEach(x=>x.addEventListener("change",()=>selectedService=x.value));
 back.onclick=()=>show(current==="home"?"welcome":current==="service"?"home":current==="datetime"?"service":current==="confirm"?"datetime":current==="success"?"home":"home");
