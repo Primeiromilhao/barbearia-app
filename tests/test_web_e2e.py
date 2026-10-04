@@ -1,0 +1,37 @@
+import json,sys,time
+from pathlib import Path
+from playwright.sync_api import sync_playwright
+
+ROOT=Path(r"F:\Fábrica\Teste\Barbearia")
+with sync_playwright() as p:
+    browser=p.chromium.launch(headless=True)
+    page=browser.new_page(viewport={"width":390,"height":844})
+    page.goto("file:///F:/Fábrica/Teste/Barbearia/web/index.html")
+    page.evaluate("localStorage.clear()")
+    assert page.locator('[data-screen="welcome"]').is_visible()
+    page.click('[data-go="register"]')
+    page.fill("#regName","Ana Teste")
+    page.fill("#regPhone","+351910000001")
+    page.click("#registerBtn")
+    assert page.locator('[data-screen="home"]').is_visible()
+    assert "Ana Teste" in page.locator("#hello").inner_text()
+    page.click('[data-go="service"]')
+    page.check('input[value="Corte de Cabelo"]')
+    page.click('[data-next="datetime"]')
+    page.locator("#times button").nth(0).click()
+    page.click('[data-next="confirm"]')
+    page.click("#confirmBtn")
+    assert page.locator('[data-screen="success"]').is_visible()
+    page.click('[data-go="history"]')
+    assert "Corte de Cabelo" in page.locator("#list").inner_text()
+    page.click('[data-go="profile"]')
+    assert "Ana Teste" in page.locator("#profileData").inner_text()
+    page.goto("file:///F:/Fábrica/Teste/Barbearia/web/proprietario.html")
+    assert page.locator('[data-screen="welcome"], .screen').count() >= 1
+    page.fill("#ownerPhone","+351920000002")
+    page.click("#ownerEnter")
+    assert page.locator("#ownerArea").is_visible()
+    assert "Ana Teste" in page.locator("#clients").inner_text()
+    assert "Corte de Cabelo" in page.locator("#appointments").inner_text()
+    print("WEB_E2E=PASS")
+    browser.close()

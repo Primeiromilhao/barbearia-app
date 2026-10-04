@@ -18,14 +18,14 @@ def test_shared_database_cycle():
         ns={"__name__":"shared_db","__file__":str(db_path)}
         exec(compile(code,str(ROOT/"shared_db.py"),"exec"),ns)
         ns["DB_PATH"]=db_path
-        ok,msg=ns["book"]("Cliente Teste","999","Serviço básico","2030-01-02","10:00")
+        ok,msg,_=ns["book"]("Cliente Teste","999","Serviço básico","2030-01-02","10:00")
         assert ok and "confirm" in msg.lower()
         rows=ns["appointments"]()
         assert len(rows)==1 and rows[0][2]=="999"
-        ok,_=ns["book"]("Outro","888","Serviço básico","2030-01-02","10:00")
+        ok,_,_=ns["book"]("Outro","888","Serviço básico","2030-01-02","10:00")
         assert not ok
         ns["cancel"](rows[0][0])
-        ok,_=ns["book"]("Outro","888","Serviço básico","2030-01-02","10:00")
+        ok,_,_=ns["book"]("Outro","888","Serviço básico","2030-01-02","10:00")
         assert ok
         rows=ns["appointments"]()
         assert len(rows)==2 and rows[0][6]=="cancelled"
