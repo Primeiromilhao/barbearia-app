@@ -1,14 +1,61 @@
-﻿const USERS="barbearia_clientes",CURRENT="barbearia_cliente_atual",BOOKS="barbearia_agendamentos";let screen="welcome",service="",time="",rescheduleId=null;
-const read=k=>JSON.parse(localStorage.getItem(k)||"null"),write=(k,v)=>localStorage.setItem(k,JSON.stringify(v)),user=()=>read(CURRENT),screens=[...document.querySelectorAll(".screen")];
-function show(n){if(n!=="register"&&n!=="welcome"&&!user())n="register";screen=n;screens.forEach(x=>x.classList.toggle("active",x.dataset.screen===n));if(n==="home")renderHome();if(n==="datetime")renderTimes();if(n==="confirm")renderSummary();if(n==="history")renderList();if(n==="profile")profileData.textContent=user()?.name+" Â· "+user()?.phone;location.hash=n}
-document.addEventListener("click",e=>{let g=e.target.closest("[data-go]"),n=e.target.closest("[data-next]");if(g){e.preventDefault();show(g.dataset.go)}if(n){if(n.dataset.next==="datetime"&&!service)return alert("Escolha um serviÃ§o.");if(n.dataset.next==="confirm"&&!time)return alert("Escolha um horÃ¡rio.");show(n.dataset.next)}})
-document.querySelectorAll("input[name=service]").forEach(x=>x.onchange=()=>service=x.value);
-registerBtn.onclick=()=>{let name=regName.value.trim(),phone=regPhone.value.trim();if(!name||!phone)return alert("Informe nome e telefone.");let a=read(USERS)||[],u={name,phone},i=a.findIndex(x=>x.phone===phone);i>=0?a[i]=u:a.push(u);write(USERS,a);write(CURRENT,u);show("home")};
-const today=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);date.value=today;date.min=today;
-function renderHome(){let u=user();hello.textContent="OlÃ¡, "+u.name+"!";phoneLabel.textContent=u.phone}
-function renderTimes(){times.replaceChildren();["09:00","10:00","11:00","13:00","14:00","15:00","16:00","17:00","18:00"].forEach(t=>{let b=document.createElement("button");b.className="time"+(t===time?" selected":"");b.textContent=t;b.onclick=()=>{time=t;renderTimes()};times.append(b)})}
-function renderSummary(){summary.textContent=(rescheduleId?"Reagendar: ":"")+" "+service+" Â· "+date.value+" Â· "+time}
-confirmBtn.onclick=()=>{let u=user(),a=read(BOOKS)||[];if(a.some(x=>x.date===date.value&&x.time===time&&x.status!=="cancelled"&&x.id!==rescheduleId))return alert("Este horÃ¡rio jÃ¡ estÃ¡ ocupado.");if(rescheduleId){let x=a.find(y=>y.id===rescheduleId);if(x){x.date=date.value;x.time=time;x.status="confirmed"}rescheduleId=null}else a.push({id:Date.now(),client:u.name,phone:u.phone,service,date:date.value,time,status:"confirmed",notifications:["whatsapp-pending","sms-pending"]});write(BOOKS,a);successSummary.textContent=service+" Â· "+date.value+" Â· "+time;show("success")};
-function renderList(){let u=user(),a=(read(BOOKS)||[]).filter(x=>x.phone===u.phone),box=list;box.replaceChildren();if(!a.length){box.textContent="Nenhum agendamento.";return}a.slice().reverse().forEach(x=>{let d=document.createElement("div");d.className="appointment";d.innerHTML="<strong>"+x.service+"</strong><span>"+x.date+" Â· "+x.time+" Â· "+x.status+"</span>";if(x.status!=="cancelled"){let q=document.createElement("div");q.className="actions";let c=document.createElement("button");c.className="dark-btn";c.textContent="Cancelar";c.onclick=()=>{x.status="cancelled";write(BOOKS,a);renderList()};let r=document.createElement("button");r.className="gold";r.textContent="Reagendar";r.onclick=()=>{rescheduleId=x.id;service=x.service;date.value=x.date;time="";show("datetime")};q.append(c,r);d.append(q)}box.append(d)})}
-show("welcome");
-
+const API="/api";
+let user=null,service=null,time="",rescheduleId=null;
+const $=id=>document.getElementById(id);
+const screens=[...document.querySelectorAll(".screen")];
+function show(n){
+  if(n!=="register"&&n!=="welcome"&&!user)n="register";
+  screens.forEach(x=>x.classList.toggle("active",x.dataset.screen===n));
+  if(n==="home")renderHome();
+  if(n==="service")loadServices();
+  if(n==="datetime")renderTimes();
+  if(n==="confirm")renderSummary();
+  if(n==="history")loadHistory();
+  if(n==="profile")$("profileData").textContent=user?user.name+" · "+user.phone:"";
+  location.hash=n;
+}
+async function api(path,opt={}){const r=await fetch(API+path,{headers:{"Content-Type":"application/json"},...opt});const d=await r.json();if(!r.ok)throw new Error(d.error||"Erro");return d}
+document.addEventListener("click",e=>{
+  const g=e.target.closest("[data-go]"),n=e.target.closest("[data-next]");
+  if(g){e.preventDefault();show(g.dataset.go)}
+  if(n){if(n.dataset.next==="datetime"&&!service)return alert("Escolha um serviço.");if(n.dataset.next==="confirm"&&!time)return alert("Escolha um horário.");show(n.dataset.next)}
+});
+$("registerBtn").onclick=async()=>{
+  const name=$("regName").value.trim(),phone=$("regPhone").value.trim();
+  if(!name||!phone)return alert("Informe nome e telefone.");
+  try{user=await api("/client/register",{method:"POST",body:JSON.stringify({name,phone})});localStorage.setItem("barbearia_cliente",JSON.stringify(user));show("home")}
+  catch(e){alert(e.message)}
+};
+function renderHome(){ $("hello").textContent="Olá, "+user.name+"!"; $("phoneLabel").textContent=user.phone }
+async function loadServices(){
+  const box=$("serviceCards");box.innerHTML="";
+  for(const s of await api("/services")){const l=document.createElement("label");l.className="service";l.innerHTML='<input type="radio" name="service" value="'+s.id+'"> '+s.name+' — €'+s.price+' · '+s.duration+' min';l.querySelector("input").onchange=()=>service=s;box.append(l)}
+}
+function renderTimes(){
+  const box=$("times");box.replaceChildren();
+  ["09:00","10:00","11:00","13:00","14:00","15:00","16:00","17:00","18:00"].forEach(t=>{const b=document.createElement("button");b.className="time"+(t===time?" selected":"");b.textContent=t;b.onclick=()=>{time=t;renderTimes()};box.append(b)})
+}
+function renderSummary(){ $("summary").textContent=(rescheduleId?"Reagendar: ":"Solicitação: ")+service.name+" · "+$("date").value+" · "+time }
+$("confirmBtn").onclick=async()=>{
+  try{
+    if(rescheduleId){await api("/appointments/"+rescheduleId+"/cancel",{method:"POST"});rescheduleId=null}
+    const a=await api("/appointments",{method:"POST",body:JSON.stringify({phone:user.phone,service_id:service.id,date:$("date").value,time})});
+    $("successTitle").textContent="Solicitação enviada!";
+    $("successSummary").textContent=service.name+" · "+a.date+" · "+a.time;
+    $("successText").textContent="Status: PENDENTE. A barbearia ainda precisa confirmar a disponibilidade.";
+    show("success");
+  }catch(e){alert(e.message)}
+};
+async function loadHistory(){
+  const box=$("list");box.innerHTML="";
+  const rows=await api("/appointments?phone="+encodeURIComponent(user.phone));
+  if(!rows.length){box.textContent="Nenhum agendamento.";return}
+  rows.forEach(x=>{
+    const d=document.createElement("div");d.className="appointment";
+    d.innerHTML="<strong>"+x.service+"</strong><span>"+x.date+" · "+x.time+" · "+x.status.toUpperCase()+"</span>";
+    if(["pending","confirmed"].includes(x.status)){const q=document.createElement("div");q.className="actions";const c=document.createElement("button");c.className="dark-btn";c.textContent="Cancelar";c.onclick=async()=>{await api("/appointments/"+x.id+"/cancel",{method:"POST"});loadHistory()};q.append(c);d.append(q)}
+    box.append(d);
+  })
+}
+$("date").value=new Date().toISOString().slice(0,10);$("date").min=$("date").value;
+try{user=JSON.parse(localStorage.getItem("barbearia_cliente")||"null")}catch{}
+show(user?"home":"welcome");
