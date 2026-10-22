@@ -71,6 +71,9 @@ def security_headers(response):
 def get_owner_secret():
     return os.environ.get("BARBEARIA_OWNER_PASSWORD", "").strip()
 
+def get_dev_user():
+    return os.environ.get("BARBEARIA_DEV_USERNAME", "DBAONLINE").strip()
+
 def get_dev_secret():
     value = os.environ.get("BARBEARIA_DEV_PASSWORD")
     if value:
@@ -444,12 +447,24 @@ def owner_logout():
 
 @app.post("/api/dev/login")
 def dev_login():
-    data=request.get_json(force=True); password=str(data.get("password",""))
-    if not secrets.compare_digest(password,get_dev_secret()):
+    data=request.get_json(force=True)
+    username=str(data.get("username","")).strip()
+    password=str(data.get("password",""))
+    
+    expected_user = get_dev_user()
+    expected_secret = get_dev_secret()
+    
+    # Validação segura de utilizador e senha:
+    # Se username for fornecido, deve coincidir exatamente com expected_user.
+    # Se omitido (chamadas legadas de teste interno), valida apenas a senha do ambiente dev.
+    user_ok = secrets.compare_digest(username, expected_user) if username else True
+    pass_ok = secrets.compare_digest(password, expected_secret)
+    
+    if not (user_ok and pass_ok):
         return jsonify({"error":"Credencial inválida"}),401
     session.clear(); session["dev_auth"]=True; session["csrf_token"]=secrets.token_urlsafe(32); session.permanent=True
-    with LOCK, db() as c: audit(c,"developer_login")
-    return jsonify({"authenticated":True})
+    with LOCK, db() as c: audit(c,"developer_login",actor_type="developer",actor_id=username)
+    return jsonify({"authenticated":True,"user":username})
 
 @app.get("/api/dev/me")
 def dev_me(): return jsonify({"authenticated":bool(session.get("dev_auth"))})

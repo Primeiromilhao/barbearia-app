@@ -13,5 +13,7 @@ services:
         value: https://primeiromilhao.github.io
       - key: BARBEARIA_SESSION_SECRET
         generateValue: true
+      - key: BARBEARIA_DEV_USERNAME
+        value: DBAONLINE
       - key: BARBEARIA_DEV_PASSWORD
         sync: false

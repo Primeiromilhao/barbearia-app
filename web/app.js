@@ -6,7 +6,22 @@ async function api(path,opt={}){const method=(opt.method||"GET").toUpperCase();c
 document.addEventListener("click",e=>{const g=e.target.closest("[data-go]"),n=e.target.closest("[data-next]");if(g){e.preventDefault();show(g.dataset.go)}if(n){if(n.dataset.next==="datetime"&&!service)return alert("Escolha um serviço.");if(n.dataset.next==="confirm"&&!time)return alert("Escolha um horário.");show(n.dataset.next)}});
 $("registerBtn").onclick=async()=>{const name=$("regName").value.trim(),phone=$("regPhone").value.trim();if(!name||!phone)return alert("Informe nome e telefone.");try{user=await api("/client/register",{method:"POST",body:JSON.stringify({name,phone})});csrfToken=null;localStorage.setItem("barbearia_cliente",JSON.stringify(user));show("home")}catch(e){alert(e.message)}};
 function renderHome(){$("hello").textContent="Olá, "+user.name+"!";$("phoneLabel").textContent=user.phone;}
-async function loadServices(){const box=$("serviceCards");box.innerHTML="";for(const s of await api("/services")){const l=document.createElement("label");l.className="service";l.innerHTML='<input type="radio" name="service" value="'+s.id+'"> '+s.name+" — €"+s.price+" · "+s.duration+" min";l.querySelector("input").onchange=()=>service=s;box.append(l)}}
+async function loadServices(){
+  const box=$("serviceCards");
+  box.replaceChildren();
+  const services=await api("/services");
+  for(const item of services){
+    const label=document.createElement("label");
+    label.className="service";
+    const input=document.createElement("input");
+    input.type="radio";
+    input.name="service";
+    input.value=String(item.id);
+    input.addEventListener("change",()=>service=item);
+    label.append(input,document.createTextNode(" "+item.name+" — €"+item.price+" · "+item.duration+" min"));
+    box.append(label);
+  }
+}
 function renderTimes(){const box=$("times");box.replaceChildren();["09:00","10:00","11:00","13:00","14:00","15:00","16:00","17:00","18:00"].forEach(t=>{const b=document.createElement("button");b.className="time"+(t===time?" selected":"");b.textContent=t;b.onclick=()=>{time=t;renderTimes()};box.append(b)})}
 function renderSummary(){$("summary").textContent=(rescheduleId?"Reagendar: ":"Solicitação: ")+service.name+" · "+$("date").value+" · "+time}
 $("confirmBtn").onclick=async()=>{try{if(rescheduleId){await api("/appointments/"+rescheduleId+"/cancel",{method:"POST"});rescheduleId=null}const a=await api("/appointments",{method:"POST",body:JSON.stringify({phone:user.phone,service_id:service.id,date:$("date").value,time})});$("successTitle").textContent="Solicitação enviada!";$("successSummary").textContent=service.name+" · "+a.date+" · "+a.time;$("successText").textContent="Status: PENDENTE. A barbearia ainda precisa confirmar a disponibilidade.";show("success");}catch(e){alert(e.message)}};
