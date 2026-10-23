@@ -1,12 +1,148 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b0f14"><title>Barbearia — Cliente</title><link rel="stylesheet" href="styles.css"></head><body><div class="app"><header class="topbar"><div class="brand">✂ <span>BARBEARIA<small>ESTILO ÚNICO</small></span></div></header><main>
-<section class="screen active" data-screen="welcome"><div class="welcome-photo">✂</div><span class="eyebrow">APLICATIVO DO CLIENTE</span><h1>Bem-vindo!</h1><p>Solicite seu horário. A confirmação será feita pela barbearia.</p><button class="gold full" data-go="register">Entrar / cadastrar</button></section>
-<section class="screen" data-screen="register"><span class="eyebrow">PRIMEIRO ACESSO</span><h2>Seu cadastro</h2><label>Nome<input id="regName" placeholder="Seu nome"></label><label>Telefone<input id="regPhone" placeholder="+351 9xx xxx xxx"></label><button class="gold full" id="registerBtn">Continuar</button></section>
-<section class="screen" data-screen="home"><h2 id="hello">Olá!</h2><p id="phoneLabel"></p><div class="menu-grid"><button data-go="service"><b>✂</b>Novo agendamento</button><button data-go="history"><b>◷</b>Meus agendamentos</button><button data-go="profile"><b>●</b>Meus dados</button><button data-go="contact"><b>☎</b>Falar com a barbearia</button></div><nav class="bottom-nav"><button data-go="home">⌂<small>Início</small></button><button data-go="service">＋<small>Agendar</small></button><button data-go="history">◷<small>Histórico</small></button><button data-go="profile">●<small>Perfil</small></button></nav></section>
-<section class="screen" data-screen="service"><span class="eyebrow">NOVO AGENDAMENTO</span><h2>Escolha o serviço</h2><div class="cards" id="serviceCards"></div><button class="gold full" data-next="datetime">Continuar</button></section>
-<section class="screen" data-screen="datetime"><span class="eyebrow">DATA E HORÁRIO</span><h2>Escolha quando vir</h2><input id="date" type="date"><div class="times" id="times"></div><button class="gold full" data-next="confirm">Continuar</button></section>
-<section class="screen" data-screen="confirm"><span class="eyebrow">SOLICITAÇÃO</span><h2>Confira seu pedido</h2><div class="summary" id="summary"></div><button class="gold full" id="confirmBtn">Enviar solicitação</button></section>
-<section class="screen" data-screen="success"><h1 id="successTitle">Solicitação enviada!</h1><div class="summary" id="successSummary"></div><p id="successText"></p><button class="gold full" data-go="history">Ver meus agendamentos</button><button class="dark-btn full" data-go="home">Início</button></section>
-<section class="screen" data-screen="history"><span class="eyebrow">SEUS HORÁRIOS</span><h2>Meus agendamentos</h2><div id="list"></div><button class="dark-btn full" data-go="home">Voltar</button></section>
-<section class="screen" data-screen="profile"><span class="eyebrow">PERFIL</span><h2>Meus dados</h2><div class="summary" id="profileData"></div><button class="dark-btn full" data-go="home">Voltar</button></section>
-<section class="screen" data-screen="contact"><span class="eyebrow">ATENDIMENTO</span><h2>Falar com a barbearia</h2><p>Seu telefone identifica os seus pedidos.</p><button class="dark-btn full" data-go="home">Voltar</button></section>
-</main></div><script src="app.js"></script></body></html>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0b0f14">
+  <title>Barbearia — Cliente</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+  <div id="pwaBanner" class="pwa-banner" hidden>
+    <span>Nova versão disponível!</span>
+    <button id="pwaUpdateBtn" class="gold-small">Atualizar aplicação</button>
+  </div>
+  <header class="topbar">
+    <div class="brand">✂ <span>BARBEARIA<small>ESTILO ÚNICO</small></span></div>
+  </header>
+  <main>
+    <section class="screen active" data-screen="welcome">
+      <div class="welcome-photo">✂</div>
+      <span class="eyebrow">APLICATIVO DO CLIENTE</span>
+      <h1>Bem-vindo!</h1>
+      <p>Solicite seu horário. A confirmação será feita pela barbearia.</p>
+      <button class="gold full" data-go="register">Entrar / cadastrar</button>
+      <div style="margin-top:20px;text-align:center">
+        <a href="#privacy" data-go="privacy" style="color:#d8aa50;font-size:13px">Privacidade e Termos de Uso</a>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="register">
+      <span class="eyebrow">PRIMEIRO ACESSO</span>
+      <h2>Seu cadastro</h2>
+      <label>Nome<input id="regName" placeholder="Seu nome"></label>
+      <label>Telefone<input id="regPhone" placeholder="+351 9xx xxx xxx"></label>
+      <button class="gold full" id="registerBtn">Continuar</button>
+      <button class="dark-btn full" data-go="welcome" style="margin-top:8px">← Voltar</button>
+    </section>
+
+    <section class="screen" data-screen="home">
+      <h2 id="hello">Olá!</h2>
+      <p id="phoneLabel"></p>
+      <div class="menu-grid">
+        <button data-go="service"><b>✂</b>Novo agendamento</button>
+        <button data-go="history"><b>◷</b>Meus agendamentos</button>
+        <button data-go="chat"><b>✉</b>Mensagens & Fotos</button>
+        <button data-go="profile"><b>●</b>Meus dados</button>
+      </div>
+      <nav class="bottom-nav">
+        <button data-go="home">⌂<small>Início</small></button>
+        <button data-go="service">＋<small>Agendar</small></button>
+        <button data-go="history">◷<small>Histórico</small></button>
+        <button data-go="chat">✉<small>Chat</small></button>
+        <button data-go="profile">●<small>Perfil</small></button>
+      </nav>
+    </section>
+
+    <section class="screen" data-screen="service">
+      <span class="eyebrow">NOVO AGENDAMENTO</span>
+      <h2>Escolha o serviço</h2>
+      <div class="cards" id="serviceCards"></div>
+      <button class="gold full" data-next="datetime">Continuar</button>
+      <button class="dark-btn full" data-go="home" style="margin-top:8px">← Voltar ao Início</button>
+    </section>
+
+    <section class="screen" data-screen="datetime">
+      <span class="eyebrow">DATA E HORÁRIO</span>
+      <h2>Escolha quando vir</h2>
+      <input id="date" type="date">
+      <div class="times" id="times"></div>
+      <button class="gold full" data-next="confirm">Continuar</button>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="dark-btn full" data-go="service">← Voltar</button>
+        <button class="dark-btn full" data-go="home">Início</button>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="confirm">
+      <span class="eyebrow">SOLICITAÇÃO</span>
+      <h2>Confira seu pedido</h2>
+      <div class="summary" id="summary"></div>
+      <button class="gold full" id="confirmBtn">Enviar solicitação</button>
+      <div id="confirmFeedback" style="margin-top:14px"></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="dark-btn full" data-go="datetime">← Voltar</button>
+        <button class="dark-btn full" data-go="home">Início</button>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="success">
+      <div class="success-badge-header" style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <span style="font-size:32px;color:#10b981">✓</span>
+        <h1 id="successTitle" style="color:#10b981;margin:0">Solicitação enviada</h1>
+      </div>
+      <div class="summary" id="successSummary"></div>
+      <p id="successText" style="color:#94a3b8"></p>
+      <button class="gold full" data-go="history">Ver meus agendamentos</button>
+      <button class="dark-btn full" data-go="home">Início</button>
+    </section>
+
+    <section class="screen" data-screen="history">
+      <span class="eyebrow">SEUS HORÁRIOS</span>
+      <h2>Meus agendamentos</h2>
+      <div id="list"></div>
+      <button class="dark-btn full" data-go="home">Voltar</button>
+    </section>
+
+    <section class="screen" data-screen="chat">
+      <span class="eyebrow">COMUNICAÇÃO</span>
+      <h2>Falar com a Barbearia</h2>
+      <div id="chatMessages" class="chat-box"></div>
+      <label>Enviar foto de corte / inspiração:
+        <input type="file" id="chatPhotoInput" accept="image/*">
+      </label>
+      <button class="dark-btn full" id="uploadPhotoBtn">Anexar Imagem</button>
+      <p id="photoStatus" class="muted"></p>
+      <label>Mensagem:
+        <input id="chatTextInput" placeholder="Escreva a sua mensagem...">
+      </label>
+      <button class="gold full" id="sendMsgBtn">Enviar Mensagem</button>
+      <button class="dark-btn full" data-go="home">Voltar</button>
+    </section>
+
+    <section class="screen" data-screen="profile">
+      <span class="eyebrow">PERFIL & PRIVACIDADE</span>
+      <h2>Meus dados</h2>
+      <div class="summary" id="profileData"></div>
+      <button class="dark-btn full" data-go="privacy">Política de Privacidade (RGPD)</button>
+      <button class="dark-btn full" data-go="home">Voltar</button>
+    </section>
+
+    <section class="screen" data-screen="privacy">
+      <span class="eyebrow">TRANSPARÊNCIA E RGPD</span>
+      <h2>Política de Privacidade</h2>
+      <div class="summary" style="font-size:14px;line-height:1.6">
+        <p><strong>1. Dados recolhidos:</strong> Apenas os estritamente necessários para a marcação de horários (Nome e Telefone).</p>
+        <p><strong>2. Finalidade:</strong> Identificação de horários, envio de lembretes (SMS/WhatsApp) e contacto operacional da barbearia.</p>
+        <p><strong>3. Conservação:</strong> Os agendamentos são retidos apenas pelo tempo necessário à operação e auditoria legal.</p>
+        <p><strong>4. Direitos do utilizador:</strong> Acesso, retificação e direito ao apagamento segundo o RGPD. Pode solicitar a exclusão contactando o estabelecimento.</p>
+        <p><strong>5. Desinstalação da aplicação:</strong> A desinstalação ou limpeza do browser limpa o cache local, mas os registos operacionais no servidor permanecem até solicitação formal de eliminação.</p>
+      </div>
+      <button class="gold full" data-go="home">Voltar ao Início</button>
+    </section>
+  </main>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

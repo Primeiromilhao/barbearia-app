@@ -1,1 +1,62 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Barbearia — Proprietário</title><link rel="stylesheet" href="styles.css"></head><body><div class="app"><header class="topbar"><div class="brand">✂ <span>BARBEARIA<small>ÁREA PRIVADA DO PROPRIETÁRIO</small></span></div></header><main><section class="screen active" style="display:block"><span class="eyebrow">PROPRIETÁRIO</span><h1>Gestão da barbearia</h1><label>Telefone cadastrado<input id="ownerPhone" type="tel" autocomplete="tel" inputmode="tel" placeholder="+351..."></label><label>Senha de ativação<input id="ownerPassword" type="password" autocomplete="current-password" placeholder="Use apenas na primeira ativação"></label><button class="gold full" id="ownerEnter">Ativar / Entrar neste dispositivo</button><p id="ownerStatus"></p><p class="muted">O telefone identifica o proprietário. A sessão de gestão fica vinculada criptograficamente a este dispositivo.</p><div id="ownerArea" hidden><h2>Pendentes</h2><div id="pending"></div><h2>Agenda</h2><div id="confirmed"></div><h2>Clientes</h2><div id="clients"></div><h2>Histórico</h2><div id="historyOwner"></div></div></section></main></div><script src="proprietario.js"></script></body></html>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Barbearia — Proprietário</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">✂ <span>BARBEARIA<small>ÁREA PRIVADA DO PROPRIETÁRIO</small></span></div>
+  </header>
+  <main>
+    <section class="screen active" style="display:block">
+      <div id="ownerLoggedHeader" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px" hidden>
+        <button class="dark-btn" id="ownerBackTopBtn">↑ Início</button>
+        <button class="dark-btn" id="ownerLogoutBtn">Sair</button>
+      </div>
+      <div id="ownerLoginBox">
+        <span class="eyebrow">PROPRIETÁRIO</span>
+        <h1>Gestão da barbearia</h1>
+        <label>Telefone cadastrado
+          <input id="ownerPhone" type="tel" autocomplete="tel" inputmode="tel" placeholder="+351...">
+        </label>
+        <label>Senha de ativação
+          <input id="ownerPassword" type="password" autocomplete="current-password" placeholder="Use sua senha de proprietário">
+        </label>
+        <button class="gold full" id="ownerEnter">Entrar / Ativar neste dispositivo</button>
+        <p id="ownerStatus"></p>
+        <p class="muted">Acesso compatível com qualquer telemóvel, tablet ou computador. O login permanece memorizado neste dispositivo.</p>
+      </div>
+      
+      <div id="ownerArea" hidden>
+        <h2>Pendentes (aprovar / recusar)</h2>
+        <div id="pending"></div>
+
+        <h2>Agenda Confirmada</h2>
+        <div id="confirmed"></div>
+
+        <h2>Gestão de Pagamentos</h2>
+        <div id="paymentsList"></div>
+
+        <h2>Clientes</h2>
+        <div id="clients"></div>
+
+        <h2>Comunicação & Mensagens</h2>
+        <div id="ownerChatArea">
+          <div id="ownerChatBox" class="chat-box" style="margin-bottom:10px"></div>
+          <input id="ownerChatInput" placeholder="Mensagem para clientes ou barbeiros...">
+          <button class="gold full" id="ownerSendChatBtn">Enviar Mensagem</button>
+        </div>
+
+        <h2>Histórico</h2>
+        <div id="historyOwner"></div>
+      </div>
+    </section>
+  </main>
+</div>
+<script src="proprietario.js"></script>
+</body>
+</html>
