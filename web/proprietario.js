@@ -83,14 +83,66 @@ async function signChallenge(challenge) {
 async function authenticateOwner(phone, password) {
   const deviceId = getDeviceId();
   let challenge;
+  // 1. Tentar desafio de chave criptográfica local se disponível
   try {
-    ({ challenge } = await api("/owner/challenge", { method: "POST", body: JSON.stringify({ phone, device_id: deviceId }) }));
+    const res = await api("/owner/challenge", { method: "POST", body: JSON.stringify({ phone, device_id: deviceId }) });
+    challenge = res.challenge;
+    return await api("/owner/login", { method: "POST", body: JSON.stringify({ phone, device_id: deviceId, signature: await signChallenge(challenge) }) });
   } catch (e) {
-    if (!password) throw new Error("Este dispositivo ainda não está ativado. Informe a senha de ativação.");
-    await api("/owner/device/register", { method: "POST", body: JSON.stringify({ phone, password, device_id: deviceId, public_jwk: await publicJwk() }) });
-    ({ challenge } = await api("/owner/challenge", { method: "POST", body: JSON.stringify({ phone, device_id: deviceId }) }));
+    // 2. Se falhar ou não tiver chave / suporte WebCrypto, autentica diretamente com a senha
+    if (!password) {
+      const storedPw = localStorage.getItem("barbearia_owner_pw");
+      if (storedPw) password = storedPw;
+      else throw new Error("Informe a senha do proprietário.");
+    }
+
+    try {
+      // Tentar registrar dispositivo se WebCrypto funcionar
+      const jwk = await publicJwk().catch(() => null);
+      if (jwk) {
+        await api("/owner/device/register", { method: "POST", body: JSON.stringify({ phone, password, device_id: deviceId, public_jwk: jwk }) }).catch(() => {});
+      }
+    } catch {}
+
+    // Login direto via credencial de proprietário
+    const logRes = await api("/owner/login", { method: "POST", body: JSON.stringify({ phone, password, device_id: deviceId }) });
+    localStorage.setItem("barbearia_owner_phone", phone);
+    return logRes;
   }
-  return api("/owner/login", { method: "POST", body: JSON.stringify({ phone, device_id: deviceId, signature: await signChallenge(challenge) }) });
+}
+
+function showOwnerLoggedIn(phone) {
+  if ($("ownerLoginBox")) $("ownerLoginBox").hidden = true;
+  if ($("ownerLoggedHeader")) $("ownerLoggedHeader").hidden = false;
+  if ($("ownerArea")) $("ownerArea").hidden = false;
+  const status = $("ownerStatus");
+  if (status) {
+    status.style.color = "#4ade80";
+    status.textContent = "Sessão ativa (" + (phone || "Proprietário") + ").";
+  }
+}
+
+function showOwnerLoggedOut() {
+  if ($("ownerLoginBox")) $("ownerLoginBox").hidden = false;
+  if ($("ownerLoggedHeader")) $("ownerLoggedHeader").hidden = true;
+  if ($("ownerArea")) $("ownerArea").hidden = true;
+  const status = $("ownerStatus");
+  if (status) status.textContent = "";
+}
+
+if ($("ownerLogoutBtn")) {
+  $("ownerLogoutBtn").onclick = async () => {
+    try { await api("/owner/logout", { method: "POST" }); } catch {}
+    localStorage.removeItem("barbearia_owner_phone");
+    csrfToken = null;
+    showOwnerLoggedOut();
+  };
+}
+
+if ($("ownerBackTopBtn")) {
+  $("ownerBackTopBtn").onclick = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 }
 
 $("ownerEnter").onclick = async () => {
@@ -102,23 +154,38 @@ $("ownerEnter").onclick = async () => {
     return;
   }
   status.style.color = "#d8aa50";
-  status.textContent = "Validando autorização do dispositivo...";
+  status.textContent = "Validando autorização...";
   try {
     await authenticateOwner(phone, password);
     $("ownerPassword").value = "";
-    $("ownerArea").hidden = false;
-    status.style.color = "#4ade80";
-    status.textContent = "Dispositivo autorizado com sucesso. Área privada ativa.";
+    localStorage.setItem("barbearia_owner_phone", phone);
+    showOwnerLoggedIn(phone);
     await render();
   } catch (e) {
     status.style.color = "#f87171";
     if (e.message && e.message.includes("Credencial inválida")) {
-      status.textContent = "Credencial inválida: verifique o telefone e a senha de ativação fornecida pelo gestor da plataforma.";
+      status.textContent = "Credencial inválida: verifique o telefone e a senha.";
     } else {
       status.textContent = e.message;
     }
   }
 };
+
+async function checkOwnerSession() {
+  try {
+    const me = await api("/owner/me");
+    if (me && me.authenticated) {
+      showOwnerLoggedIn(me.phone);
+      await render();
+      return;
+    }
+    const savedPhone = localStorage.getItem("barbearia_owner_phone");
+    if (savedPhone) {
+      $("ownerPhone").value = savedPhone;
+    }
+  } catch {}
+}
+checkOwnerSession();
 
 async function render() {
   try {

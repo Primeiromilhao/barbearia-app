@@ -34,6 +34,7 @@
       <label>Nome<input id="regName" placeholder="Seu nome"></label>
       <label>Telefone<input id="regPhone" placeholder="+351 9xx xxx xxx"></label>
       <button class="gold full" id="registerBtn">Continuar</button>
+      <button class="dark-btn full" data-go="welcome" style="margin-top:8px">← Voltar</button>
     </section>
 
     <section class="screen" data-screen="home">
@@ -59,6 +60,7 @@
       <h2>Escolha o serviço</h2>
       <div class="cards" id="serviceCards"></div>
       <button class="gold full" data-next="datetime">Continuar</button>
+      <button class="dark-btn full" data-go="home" style="margin-top:8px">← Voltar ao Início</button>
     </section>
 
     <section class="screen" data-screen="datetime">
@@ -67,6 +69,10 @@
       <input id="date" type="date">
       <div class="times" id="times"></div>
       <button class="gold full" data-next="confirm">Continuar</button>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="dark-btn full" data-go="service">← Voltar</button>
+        <button class="dark-btn full" data-go="home">Início</button>
+      </div>
     </section>
 
     <section class="screen" data-screen="confirm">
@@ -75,6 +81,10 @@
       <div class="summary" id="summary"></div>
       <button class="gold full" id="confirmBtn">Enviar solicitação</button>
       <div id="confirmFeedback" style="margin-top:14px"></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="dark-btn full" data-go="datetime">← Voltar</button>
+        <button class="dark-btn full" data-go="home">Início</button>
+      </div>
     </section>
 
     <section class="screen" data-screen="success">

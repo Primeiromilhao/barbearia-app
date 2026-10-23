@@ -293,5 +293,8 @@ $("date").value=new Date().toISOString().slice(0,10);
 $("date").min=$("date").value;
 try{user=JSON.parse(localStorage.getItem("barbearia_cliente")||"null")}catch{}
 show(user?"home":"welcome");
+if (user) {
+  ensureClientSession();
+}
 checkAppVersion();
 

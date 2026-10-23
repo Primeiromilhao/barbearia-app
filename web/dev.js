@@ -57,8 +57,14 @@ $("loginBtn").onclick = async () => {
 };
 
 $("logoutBtn").onclick = async () => {
-  await api("/logout", { method: "POST" });
-  location.reload();
+  try {
+    await api("/logout", { method: "POST" });
+  } catch {}
+  devCsrfToken = null;
+  $("consoleView").hidden = true;
+  $("loginView").hidden = false;
+  $("devPassword").value = "";
+  $("loginStatus").textContent = "Sessão encerrada.";
 };
 
 async function loadAll() {
@@ -69,6 +75,8 @@ async function loadAll() {
     $("devContent").textContent = e.message;
   }
 }
+
+const BACK_BUTTON_HTML = `<button class="dark-btn" onclick="loadAll()" style="margin-bottom:14px;display:inline-block">← Voltar ao Diagnóstico Principal</button>`;
 
 async function showClients() {
   const d = await api("/clients");
@@ -92,6 +100,7 @@ async function showAudit() {
 
 async function showRepairMenu() {
   $("devContent").innerHTML = `
+    ${BACK_BUTTON_HTML}
     <h2>Centro de Ferramentas de Reparação</h2>
     <p>Ações separadas com explicação, pré-visualização e verificação posterior:</p>
     <div class="menu-grid" style="margin-bottom:15px">
@@ -147,6 +156,7 @@ async function loadRepairsHistory() {
 
 async function showAppVersionForm() {
   $("devContent").innerHTML = `
+    ${BACK_BUTTON_HTML}
     <h2>Publicar Nova Versão da PWA</h2>
     <p>Ao publicar uma nova versão, todos os clientes e proprietários receberão o aviso de atualização.</p>
     <div style="max-width:400px">
@@ -178,10 +188,11 @@ async function submitAppVersion() {
 }
 
 async function showRecoveryStaged() {
-  $("devContent").innerHTML = "Carregando pré-visualização de impacto...";
+  $("devContent").innerHTML = `${BACK_BUTTON_HTML}<p>Carregando pré-visualização de impacto...</p>`;
   try {
     const prev = await api("/recovery/preview", { method: "POST" });
     $("devContent").innerHTML = `
+      ${BACK_BUTTON_HTML}
       <h2>Recuperação do Sistema em Etapas (Ambiente de Produção)</h2>
       <p style="color:#d8aa50"><strong>Garantia de Segurança:</strong> ${esc(prev.guarantee)}</p>
       <div class="summary">
@@ -197,7 +208,7 @@ async function showRecoveryStaged() {
       <div id="recoveryStatus" style="margin-top:10px"></div>
     `;
   } catch (e) {
-    $("devContent").textContent = "Erro: " + e.message;
+    $("devContent").innerHTML = `${BACK_BUTTON_HTML}<span style="color:#f87171">Erro: ${esc(e.message)}</span>`;
   }
 }
 
@@ -222,14 +233,15 @@ async function resetTest() {
   if (!confirm("RESETAR DADOS DE TESTE? Esta ação é destrutiva para o ambiente de testes.")) return;
   try {
     const d = await api("/test/reset", { method: "POST", body: JSON.stringify({ confirm: "RESET_TEST_ENVIRONMENT" }) });
-    $("devContent").innerHTML = "<h2>Teste resetado</h2><pre>" + esc(JSON.stringify(d, null, 2)) + "</pre>";
+    $("devContent").innerHTML = `${BACK_BUTTON_HTML}<h2>Teste resetado</h2><pre>` + esc(JSON.stringify(d, null, 2)) + "</pre>";
   } catch (e) {
     alert(e.message);
   }
 }
 
 async function showCreateOwnerForm() {
-  $("devContent").innerHTML = `<h2>Cadastrar Novo Proprietário (Barbearia)</h2>
+  $("devContent").innerHTML = `${BACK_BUTTON_HTML}
+    <h2>Cadastrar Novo Proprietário (Barbearia)</h2>
     <p>Crie o acesso de um novo lojista/barbeiro para ativar o seu terminal operacional.</p>
     <div style="max-width:400px">
       <label>Telefone do Proprietário<input id="newOwnerPhone" type="tel" placeholder="ex: +351912345678"></label>
@@ -266,7 +278,7 @@ async function submitCreateOwner() {
 }
 
 function renderTable(title, rows, cols) {
-  $("devContent").innerHTML = "<h2>" + title + "</h2>" + (rows.length ? '<div style="overflow:auto"><table><thead><tr>' + cols.map(c => "<th>" + c + "</th>").join("") + "</tr></thead><tbody>" + rows.map(r => "<tr>" + cols.map(c => "<td>" + esc(r[c]) + "</td>").join("") + "</tr>").join("") + "</tbody></table></div>" : "<p>Nenhum registro.</p>");
+  $("devContent").innerHTML = BACK_BUTTON_HTML + "<h2>" + title + "</h2>" + (rows.length ? '<div style="overflow:auto"><table><thead><tr>' + cols.map(c => "<th>" + c + "</th>").join("") + "</tr></thead><tbody>" + rows.map(r => "<tr>" + cols.map(c => "<td>" + esc(r[c]) + "</td>").join("") + "</tr>").join("") + "</tbody></table></div>" : "<p>Nenhum registro.</p>");
 }
 
 function esc(v) {

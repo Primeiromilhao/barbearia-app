@@ -900,17 +900,50 @@ def owner_challenge():
 
 @app.post("/api/owner/login")
 def owner_login():
-    data=request.get_json(force=True); phone=str(data.get("phone","")).strip(); device_id=str(data.get("device_id","")).strip(); signature=str(data.get("signature","")).strip()
-    challenge=session.get("owner_challenge")
-    if not challenge or session.get("owner_challenge_device_id") != device_id or time.time() > float(session.get("owner_challenge_expires",0)):
-        return jsonify({"error":"Desafio de autenticação ausente ou expirado"}),401
+    data=request.get_json(force=True)
+    phone=str(data.get("phone","")).strip()
+    device_id=str(data.get("device_id","")).strip()
+    signature=str(data.get("signature","")).strip()
+    password=str(data.get("password",""))
+
     with LOCK, db() as c:
-        row=c.execute("SELECT o.id,o.phone,o.active,d.public_jwk FROM owners o JOIN owner_devices d ON d.owner_id=o.id WHERE o.phone=? AND o.active=1 AND d.device_id=?",(phone,device_id)).fetchone()
-        if not row: return jsonify({"error":"Proprietário ou dispositivo não autorizado"}),401
-        try: verify_device_signature(json.loads(row["public_jwk"]),challenge,signature)
-        except Exception: return jsonify({"error":"Assinatura do dispositivo inválida"}),401
-        c.execute("UPDATE owner_devices SET last_seen=? WHERE device_id=?",(time.time(),device_id))
-        audit(c,"owner_login",actor_type="owner",actor_id=phone,metadata={"device_id":device_id})
+        row=c.execute("SELECT o.id,o.phone,o.password_hash,o.active,d.public_jwk FROM owners o LEFT JOIN owner_devices d ON d.owner_id=o.id AND d.device_id=? WHERE o.phone=? AND o.active=1", (device_id, phone)).fetchone()
+        if not row:
+            # Check if owner exists by phone
+            owner_only = c.execute("SELECT o.id,o.phone,o.password_hash,o.active FROM owners o WHERE o.phone=? AND o.active=1", (phone,)).fetchone()
+            if not owner_only:
+                return jsonify({"error":"Proprietário não encontrado ou inativo"}),401
+            row = owner_only
+
+        # Check if authenticating via password
+        if password:
+            pw_ok = verify_password(password, row["password_hash"])
+            env_secret = get_owner_secret()
+            if not pw_ok and env_secret and secrets.compare_digest(password, env_secret):
+                pw_ok = True
+                c.execute("UPDATE owners SET password_hash=? WHERE id=?", (hash_password(password), row["id"]))
+            if not pw_ok:
+                return jsonify({"error":"Credencial inválida: senha incorreta"}),401
+            # If device_id provided, ensure or update device
+            if device_id:
+                dev_exists = c.execute("SELECT id FROM owner_devices WHERE device_id=?", (device_id,)).fetchone()
+                if dev_exists:
+                    c.execute("UPDATE owner_devices SET last_seen=? WHERE device_id=?", (time.time(), device_id))
+            audit(c,"owner_login_password",actor_type="owner",actor_id=phone,metadata={"device_id":device_id})
+        else:
+            # Authenticate via ECDSA challenge signature
+            challenge=session.get("owner_challenge")
+            if not challenge or session.get("owner_challenge_device_id") != device_id or time.time() > float(session.get("owner_challenge_expires",0)):
+                return jsonify({"error":"Desafio de autenticação ausente ou expirado"}),401
+            if not row["public_jwk"]:
+                return jsonify({"error":"Dispositivo não registrado"}),401
+            try:
+                verify_device_signature(json.loads(row["public_jwk"]),challenge,signature)
+            except Exception:
+                return jsonify({"error":"Assinatura do dispositivo inválida"}),401
+            c.execute("UPDATE owner_devices SET last_seen=? WHERE device_id=?",(time.time(),device_id))
+            audit(c,"owner_login_signature",actor_type="owner",actor_id=phone,metadata={"device_id":device_id})
+
     session.pop("owner_challenge", None); session.pop("owner_challenge_device_id", None); session.pop("owner_challenge_expires", None)
     session.clear(); session["owner_auth"]=True; session["owner_id"]=row["id"]; session["owner_phone"]=row["phone"]; session["owner_device_id"]=device_id; session["csrf_token"]=secrets.token_urlsafe(32); session.permanent=True
     return jsonify({"authenticated":True,"phone":row["phone"],"device_id":device_id})
@@ -920,7 +953,6 @@ def owner_me():
     return jsonify({"authenticated":bool(session.get("owner_auth") or session.get("dev_auth")),"phone":session.get("owner_phone"),"device_id":session.get("owner_device_id")})
 
 @app.post("/api/owner/logout")
-@require_owner
 def owner_logout():
     session.clear(); return jsonify({"authenticated":False})
 
@@ -949,7 +981,6 @@ def dev_login():
 def dev_me(): return jsonify({"authenticated":bool(session.get("dev_auth"))})
 
 @app.post("/api/dev/logout")
-@require_dev
 def dev_logout():
     session.clear(); return jsonify({"authenticated":False})
 
