@@ -31,10 +31,25 @@
     <section class="screen" data-screen="register">
       <span class="eyebrow">PRIMEIRO ACESSO</span>
       <h2>Seu cadastro</h2>
+      <div id="regFeedback" style="margin-bottom:12px"></div>
       <label>Nome<input id="regName" placeholder="Seu nome"></label>
       <label>Telefone<input id="regPhone" placeholder="+351 9xx xxx xxx"></label>
       <button class="gold full" id="registerBtn">Continuar</button>
       <button class="dark-btn full" data-go="welcome" style="margin-top:8px">← Voltar</button>
+    </section>
+
+    <section class="screen" data-screen="verifyPhone">
+      <span class="eyebrow">CONFIRMAÇÃO DO TELEFONE</span>
+      <h2>Código de Verificação</h2>
+      <p style="font-size:14px;color:#aeb5bd">Enviámos um código SMS de uso único para o seu número:</p>
+      <p id="verifyPhoneDisplay" style="font-weight:700;color:#d8aa50;margin:4px 0 16px"></p>
+      <div id="verifyFeedback" style="margin-bottom:12px"></div>
+      <label>Código de 6 dígitos
+        <input id="verifyCodeInput" type="text" inputmode="numeric" maxlength="6" placeholder="123456" style="text-align:center;letter-spacing:4px;font-size:22px">
+      </label>
+      <button class="gold full" id="verifySubmitBtn">Confirmar Telefone</button>
+      <button class="dark-btn full" id="resendCodeBtn" style="margin-top:8px">Reenviar Código</button>
+      <button class="dark-btn full" data-go="register" style="margin-top:8px">← Alterar Telefone</button>
     </section>
 
     <section class="screen" data-screen="home">
@@ -58,6 +73,7 @@
     <section class="screen" data-screen="service">
       <span class="eyebrow">NOVO AGENDAMENTO</span>
       <h2>Escolha o serviço</h2>
+      <div id="serviceFeedback"></div>
       <div class="cards" id="serviceCards"></div>
       <button class="gold full" data-next="datetime">Continuar</button>
       <button class="dark-btn full" data-go="home" style="margin-top:8px">← Voltar ao Início</button>
@@ -66,6 +82,7 @@
     <section class="screen" data-screen="datetime">
       <span class="eyebrow">DATA E HORÁRIO</span>
       <h2>Escolha quando vir</h2>
+      <div id="datetimeFeedback"></div>
       <input id="date" type="date">
       <div class="times" id="times"></div>
       <button class="gold full" data-next="confirm">Continuar</button>
@@ -101,6 +118,7 @@
     <section class="screen" data-screen="history">
       <span class="eyebrow">SEUS HORÁRIOS</span>
       <h2>Meus agendamentos</h2>
+      <div id="historyFeedback"></div>
       <div id="list"></div>
       <button class="dark-btn full" data-go="home">Voltar</button>
     </section>
@@ -108,6 +126,7 @@
     <section class="screen" data-screen="chat">
       <span class="eyebrow">COMUNICAÇÃO</span>
       <h2>Falar com a Barbearia</h2>
+      <div id="chatFeedback"></div>
       <div id="chatMessages" class="chat-box"></div>
       <label>Enviar foto de corte / inspiração:
         <input type="file" id="chatPhotoInput" accept="image/*">

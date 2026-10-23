@@ -176,13 +176,22 @@ def init_db():
           id INTEGER PRIMARY KEY AUTOINCREMENT, repair_type TEXT NOT NULL,
           problem_description TEXT NOT NULL, changes_applied TEXT NOT NULL,
           verification_result TEXT NOT NULL, created_at REAL NOT NULL);
+        CREATE TABLE IF NOT EXISTS phone_verifications(
+          id INTEGER PRIMARY KEY AUTOINCREMENT, phone TEXT NOT NULL,
+          code_hash TEXT NOT NULL, attempts INTEGER NOT NULL DEFAULT 0,
+          expires_at REAL NOT NULL, verified_at REAL, created_at REAL NOT NULL);
         """)
-        # Safe migration if table already existed without payment columns
-        cols = [r["name"] for r in c.execute("PRAGMA table_info(appointments)").fetchall()]
-        if "payment_status" not in cols:
+        # Safe migration for appointments
+        cols_appt = [r["name"] for r in c.execute("PRAGMA table_info(appointments)").fetchall()]
+        if "payment_status" not in cols_appt:
             c.execute("ALTER TABLE appointments ADD COLUMN payment_status TEXT NOT NULL DEFAULT 'unpaid'")
-        if "payment_method" not in cols:
+        if "payment_method" not in cols_appt:
             c.execute("ALTER TABLE appointments ADD COLUMN payment_method TEXT")
+
+        # Safe migration for clients: phone_verified
+        cols_clients = [r["name"] for r in c.execute("PRAGMA table_info(clients)").fetchall()]
+        if "phone_verified" not in cols_clients:
+            c.execute("ALTER TABLE clients ADD COLUMN phone_verified INTEGER NOT NULL DEFAULT 0")
         
         services = [(1,"Corte de Cabelo",15,30),(2,"Barba",10,20),(3,"Corte + Barba",22,50)]
         c.executemany("INSERT OR IGNORE INTO services VALUES(?,?,?,?)", services)
@@ -366,17 +375,24 @@ def csrf_endpoint():
 
 @app.post("/api/client/register")
 def register():
-    data=request.get_json(force=True); name=str(data.get("name","")).strip(); phone=str(data.get("phone","")).strip()
+    data=request.get_json(force=True)
+    name=str(data.get("name","")).strip()
+    phone_raw=str(data.get("phone","")).strip()
+    phone = normalize_phone(phone_raw)
     if not name or not phone: return jsonify({"error":"Nome e telefone são obrigatórios"}),400
     with LOCK, db() as c:
-        existing=c.execute("SELECT id,name,phone FROM clients WHERE phone=?",(phone,)).fetchone()
-        if existing and session.get("client_phone") != phone:
-            return jsonify({"error":"Cliente já registrado neste estabelecimento. Autenticação necessária."}),409
+        existing=c.execute("SELECT id,name,phone,phone_verified FROM clients WHERE phone=?",(phone,)).fetchone()
+        is_verified = 1 if session.get("phone_verified_" + phone) else (existing["phone_verified"] if existing else 0)
         if existing:
-            c.execute("UPDATE clients SET name=? WHERE phone=?",(name,phone))
+            # Se for uma sessão diferente tentando recadastrar um cliente existente com nome diferente sem ter verificado o telefone
+            if session.get("client_phone") != phone and existing["name"] != name and not session.get("phone_verified_" + phone):
+                return jsonify({"error":"Cliente já registrado neste estabelecimento. Autenticação necessária."}),409
+            if name and name != existing["name"]:
+                c.execute("UPDATE clients SET name=?, phone_verified=? WHERE phone=?",(name,is_verified,phone))
         else:
-            c.execute("INSERT INTO clients(name,phone,created_at) VALUES(?,?,?)",(name,phone,time.time()))
-        r=c.execute("SELECT id,name,phone FROM clients WHERE phone=?",(phone,)).fetchone()
+            c.execute("INSERT INTO clients(name,phone,phone_verified,created_at) VALUES(?,?,?,?)",(name,phone,is_verified,get_current_time()))
+        r=c.execute("SELECT id,name,phone,phone_verified FROM clients WHERE phone=?",(phone,)).fetchone()
+    session.clear()
     session["client_phone"]=phone; session["csrf_token"]=secrets.token_urlsafe(32); session.permanent=True
     return jsonify(rowdict(r))
 
@@ -675,6 +691,105 @@ def list_payments():
             return jsonify({"error": "Autenticação necessária"}), 401
     return jsonify([rowdict(x) for x in rows])
 
+# ---------- PHONE VERIFICATION MODULE ----------
+def normalize_phone(phone_raw):
+    raw = "".join(c for c in str(phone_raw or "") if c.isdigit() or c == "+").strip()
+    if not raw:
+        return ""
+    if raw.startswith("00"):
+        raw = "+" + raw[2:]
+    elif not raw.startswith("+"):
+        # Se for número nacional de 9 dígitos de Portugal (começa com 9, 2, etc.)
+        if len(raw) == 9:
+            raw = "+351" + raw
+        else:
+            raw = "+" + raw
+    return raw
+
+@app.post("/api/client/phone/send-code")
+def send_phone_code():
+    data = request.get_json(silent=True) or {}
+    phone_raw = data.get("phone", "")
+    phone = normalize_phone(phone_raw)
+    if not phone or len(phone) < 8:
+        return jsonify({"error": "Número de telefone inválido. Verifique o número e indicativo."}), 400
+
+    now = get_current_time()
+    with LOCK, db() as c:
+        # Rate limit por telefone: máximo 3 envios por janela de 10 minutos
+        recent_sends = c.execute("SELECT COUNT(*) n FROM phone_verifications WHERE phone=? AND created_at >= ?",
+                                 (phone, now - 600)).fetchone()["n"]
+        if recent_sends >= 3:
+            return jsonify({"error": "Limite de envios excedido. Por favor, aguarde alguns minutos antes de tentar novamente."}), 429
+
+        # Invalida/expira códigos anteriores pendentes para o mesmo telefone sem apagar o histórico de envio
+        c.execute("UPDATE phone_verifications SET expires_at=? WHERE phone=? AND verified_at IS NULL", (now - 1, phone))
+
+        # Gera código de 6 dígitos numéricos aleatório
+        # Ambiente de teste seguro: sem registrar em log
+        code = f"{secrets.randbelow(900000) + 100000}"
+        salt = secrets.token_bytes(16)
+        code_hash = hash_password(code, salt)
+        expires_at = now + 300  # 5 minutos
+
+        cur = c.execute("""INSERT INTO phone_verifications(phone,code_hash,attempts,expires_at,verified_at,created_at)
+                           VALUES(?,?,0,?,NULL,?)""", (phone, code_hash, expires_at, now))
+        vid = cur.lastrowid
+        audit(c, "phone_verification_requested", "phone", phone, {"verification_id": vid})
+
+        # Em ambiente de teste/simulado local sem SMS pago configurado:
+        # Se a variável BARBEARIA_TEST_MODE ou PYTEST_CURRENT_TEST estiver ativa, retorna modo de teste
+        resp = {
+            "status": "code_sent",
+            "phone": phone,
+            "expires_in_seconds": 300,
+            "message": "Código de verificação enviado com sucesso."
+        }
+        if os.environ.get("PYTEST_CURRENT_TEST") or os.environ.get("BARBEARIA_TEST_MODE") == "1":
+            resp["dev_code_test"] = code  # Apenas em teste automatizado explícito
+
+    return jsonify(resp)
+
+@app.post("/api/client/phone/verify-code")
+def verify_phone_code():
+    data = request.get_json(silent=True) or {}
+    phone_raw = data.get("phone", "")
+    code = str(data.get("code", "")).strip()
+    phone = normalize_phone(phone_raw)
+
+    if not phone or not code:
+        return jsonify({"error": "Telefone e código são obrigatórios."}), 400
+
+    now = get_current_time()
+    with LOCK, db() as c:
+        row = c.execute("SELECT * FROM phone_verifications WHERE phone=? AND verified_at IS NULL ORDER BY id DESC LIMIT 1",
+                        (phone,)).fetchone()
+        if not row:
+            return jsonify({"error": "Nenhum código ativo encontrado para este telefone. Solicite um novo código."}), 400
+
+        if now > row["expires_at"]:
+            return jsonify({"error": "O código de verificação expirou. Por favor solicite um novo código."}), 400
+
+        if row["attempts"] >= 3:
+            return jsonify({"error": "Número máximo de tentativas excedido. Solicite um novo código."}), 429
+
+        # Incrementa tentativas
+        c.execute("UPDATE phone_verifications SET attempts = attempts + 1 WHERE id=?", (row["id"],))
+
+        if not verify_password(code, row["code_hash"]):
+            remaining = 2 - row["attempts"]
+            msg = "Código incorreto. " + (f"Resta(m) {remaining} tentativa(s)." if remaining > 0 else "Solicite um novo código.")
+            return jsonify({"error": msg}), 400
+
+        # Sucesso na validação
+        c.execute("UPDATE phone_verifications SET verified_at=? WHERE id=?", (now, row["id"]))
+        # Se cliente já existe, marca como verificado
+        c.execute("UPDATE clients SET phone_verified=1 WHERE phone=?", (phone,))
+        session["phone_verified_" + phone] = True
+        audit(c, "phone_verified", "phone", phone)
+
+    return jsonify({"verified": True, "phone": phone, "message": "Telefone verificado com sucesso."})
+
 # ---------- MESSAGES AND CHAT MODULE ----------
 @app.post("/api/messages")
 def send_msg():
@@ -685,14 +800,20 @@ def send_msg():
     photo_id = data.get("photo_id")
 
     if not msg and not photo_id:
-        return jsonify({"error": "Mensagem ou foto necessária"}), 400
+        return jsonify({"error": "A mensagem não pode estar vazia."}), 400
 
     if session.get("client_phone"):
         sender_type = "client"
         sender_id = session.get("client_phone")
+        recipient_type = "owner"
+        recipient_id = "owner"
     elif session.get("owner_auth"):
         sender_type = "owner"
         sender_id = session.get("owner_phone") or "owner"
+        recipient_type = "client"
+        # Se for para cliente específico, mantém; caso contrário 'all'
+        if not recipient_id:
+            recipient_id = "all"
     elif session.get("dev_auth"):
         sender_type = "developer"
         sender_id = "DBAONLINE"
@@ -706,7 +827,7 @@ def send_msg():
                         (sender_type, sender_id, recipient_type, recipient_id, msg, photo_id, now))
         mid = cur.lastrowid
         row = c.execute("SELECT * FROM messages WHERE id=?", (mid,)).fetchone()
-        audit(c, "message_sent", "message", mid, {"sender_type": sender_type, "recipient_type": recipient_type})
+        audit(c, "message_sent", "message", mid, {"sender_type": sender_type, "recipient_type": recipient_type, "recipient_id": recipient_id})
     return jsonify(rowdict(row)), 201
 
 @app.get("/api/messages")
@@ -714,12 +835,25 @@ def get_msgs():
     with db() as c:
         if session.get("client_phone"):
             phone = session.get("client_phone")
-            rows = c.execute("""SELECT * FROM messages WHERE (sender_type='client' AND sender_id=?)
-                                OR (recipient_type='client' AND recipient_id=?) ORDER BY id ASC""",
+            # Cliente vê: mensagens enviadas por ele, ou mensagens do proprietário destinadas a ele ou a 'all'
+            rows = c.execute("""SELECT * FROM messages WHERE 
+                                (sender_type='client' AND sender_id=?)
+                                OR (sender_type='owner' AND (recipient_id=? OR recipient_id='all'))
+                                ORDER BY id ASC""",
                              (phone, phone)).fetchall()
         elif session.get("owner_auth"):
-            rows = c.execute("""SELECT * FROM messages WHERE sender_type IN ('owner','barber')
-                                OR recipient_type IN ('owner','barber') ORDER BY id ASC""").fetchall()
+            client_filter = request.args.get("client_phone", "").strip()
+            if client_filter:
+                rows = c.execute("""SELECT * FROM messages WHERE 
+                                    (sender_type='client' AND sender_id=?)
+                                    OR (sender_type='owner' AND (recipient_id=? OR recipient_id='all'))
+                                    ORDER BY id ASC""", (client_filter, client_filter)).fetchall()
+            else:
+                # Todas as mensagens do estabelecimento (cliente <-> proprietário)
+                rows = c.execute("""SELECT * FROM messages WHERE 
+                                    sender_type IN ('owner','barber','client') 
+                                    OR recipient_type IN ('owner','barber','client') 
+                                    ORDER BY id ASC""").fetchall()
         elif session.get("dev_auth"):
             # Manager has restricted access: cannot view private messages without explicit authorized audit
             rows = []

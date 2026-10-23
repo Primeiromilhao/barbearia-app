@@ -232,56 +232,80 @@ function card(x, type) {
   return b + "</div>";
 }
 
+function ownerNotice(elId, msg, isSuccess = false) {
+  const el = $(elId);
+  if (!el) return;
+  const bg = isSuccess ? "#064e3b" : "#451a1a";
+  const border = isSuccess ? "#059669" : "#b91c1c";
+  const color = isSuccess ? "#6ee7b7" : "#fca5a5";
+  el.innerHTML = `<div style="background:${bg};border:1px solid ${border};color:${color};padding:10px 14px;border-radius:10px;font-size:14px;line-height:1.4;margin-bottom:10px">
+    ${esc(msg)}
+  </div>`;
+}
+
+function clearOwnerNotice(elId) {
+  const el = $(elId);
+  if (el) el.innerHTML = "";
+}
+
 async function confirmA(id) {
+  clearOwnerNotice("ownerActionFeedback");
   try {
     await api("/owner/appointments/" + id + "/confirm", { method: "POST" });
+    ownerNotice("ownerActionFeedback", "Agendamento confirmado com sucesso!", true);
     await render();
   } catch (e) {
-    alert(e.message);
+    ownerNotice("ownerActionFeedback", e.message || "Não foi possível confirmar o agendamento.");
   }
 }
 
 async function rejectA(id) {
+  clearOwnerNotice("ownerActionFeedback");
   try {
     await api("/owner/appointments/" + id + "/reject", { method: "POST" });
+    ownerNotice("ownerActionFeedback", "Solicitação recusada com sucesso.", true);
     await render();
   } catch (e) {
-    alert(e.message);
+    ownerNotice("ownerActionFeedback", e.message || "Não foi possível recusar a solicitação.");
   }
 }
 
 async function completeA(id, method) {
+  clearOwnerNotice("ownerActionFeedback");
   try {
     await api("/owner/appointments/" + id + "/complete", {
       method: "POST",
       body: JSON.stringify({ payment_method: method, payment_status: "paid" })
     });
+    ownerNotice("ownerActionFeedback", "Atendimento marcado como concluído (" + method.toUpperCase() + ")!", true);
     await render();
   } catch (e) {
-    alert(e.message);
+    ownerNotice("ownerActionFeedback", e.message || "Não foi possível concluir o atendimento.");
   }
 }
 
 async function markNoShowAction(id) {
-  const reason = prompt("Justificação da falta (opcional):") || "Cliente não compareceu";
+  clearOwnerNotice("ownerActionFeedback");
   try {
     await api("/owner/appointments/" + id + "/no_show", {
       method: "POST",
-      body: JSON.stringify({ notes: reason })
+      body: JSON.stringify({ notes: "Cliente não compareceu" })
     });
+    ownerNotice("ownerActionFeedback", "Falta registada com sucesso no histórico.", true);
     await render();
   } catch (e) {
-    alert(e.message);
+    ownerNotice("ownerActionFeedback", e.message || "Não foi possível registar a falta.");
   }
 }
 
 async function confirmPaymentAction(pid) {
+  clearOwnerNotice("ownerActionFeedback");
   try {
     await api("/owner/payments/" + pid + "/confirm", { method: "POST" });
-    alert("Pagamento confirmado com sucesso!");
+    ownerNotice("ownerActionFeedback", "Pagamento confirmado com sucesso!", true);
     await render();
   } catch (e) {
-    alert(e.message);
+    ownerNotice("ownerActionFeedback", e.message || "Não foi possível confirmar o pagamento.");
   }
 }
 
@@ -298,7 +322,14 @@ async function loadOwnerChat() {
     msgs.forEach(m => {
       const d = document.createElement("div");
       d.className = "chat-msg " + (m.sender_type === "owner" ? "msg-out" : "msg-in");
-      let content = "<strong>" + esc(m.sender_id) + ":</strong> " + esc(m.message);
+      let timeLabel = "";
+      if (m.created_at) {
+        try {
+          const dt = new Date(m.created_at * 1000);
+          timeLabel = ` <small style="opacity:0.75;font-size:11px">(${dt.toLocaleTimeString("pt-PT", {hour:"2-digit",minute:"2-digit"})})</small>`;
+        } catch {}
+      }
+      let content = "<strong>" + esc(m.sender_id) + ":</strong> " + esc(m.message) + timeLabel;
       if (m.photo_id) {
         content += `<br><img src="${API}/photos/${m.photo_id}" style="max-width:180px;border-radius:6px;margin-top:4px" alt="Foto">`;
       }
@@ -306,14 +337,19 @@ async function loadOwnerChat() {
       box.append(d);
     });
   } catch (e) {
-    box.textContent = "Erro: " + e.message;
+    box.textContent = "Não foi possível carregar as mensagens: " + e.message;
   }
 }
 
 if ($("ownerSendChatBtn")) {
   $("ownerSendChatBtn").onclick = async () => {
+    clearOwnerNotice("ownerChatFeedback");
     const txt = $("ownerChatInput").value.trim();
-    if (!txt) return alert("Escreva uma mensagem.");
+    if (!txt) {
+      ownerNotice("ownerChatFeedback", "Escreva uma mensagem para enviar.");
+      return;
+    }
+    $("ownerSendChatBtn").disabled = true;
     try {
       await api("/messages", {
         method: "POST",
@@ -324,9 +360,12 @@ if ($("ownerSendChatBtn")) {
         })
       });
       $("ownerChatInput").value = "";
+      ownerNotice("ownerChatFeedback", "Mensagem enviada com sucesso.", true);
       await loadOwnerChat();
     } catch (e) {
-      alert(e.message);
+      ownerNotice("ownerChatFeedback", e.message || "Não foi possível enviar a mensagem. Tente novamente.");
+    } finally {
+      $("ownerSendChatBtn").disabled = false;
     }
   };
 }

@@ -213,7 +213,6 @@ async function showRecoveryStaged() {
 }
 
 async function executeRecoveryStaged() {
-  if (!confirm("Confirmar execução da recuperação em etapas? Registos reais de clientes e pagamentos permanecerão intocados.")) return;
   const status = $("recoveryStatus");
   status.textContent = "Executando recuperação em etapas...";
   try {
@@ -222,20 +221,33 @@ async function executeRecoveryStaged() {
       body: JSON.stringify({ confirm: "CONFIRM_STAGED_RECOVERY" })
     });
     status.style.color = "#4ade80";
-    status.textContent = "Recuperação concluída! " + res.message;
+    status.textContent = "Recuperação concluída com sucesso! " + res.message;
   } catch (e) {
     status.style.color = "#f87171";
-    status.textContent = "Erro: " + e.message;
+    status.textContent = "Não foi possível concluir a recuperação: " + e.message;
   }
 }
 
 async function resetTest() {
-  if (!confirm("RESETAR DADOS DE TESTE? Esta ação é destrutiva para o ambiente de testes.")) return;
+  $("devContent").innerHTML = `
+    ${BACK_BUTTON_HTML}
+    <h2>Reset do Ambiente de Teste</h2>
+    <div style="background:#451a1a;border:1px solid #b91c1c;color:#fca5a5;padding:12px;border-radius:10px;margin-bottom:14px">
+      <strong>Atenção:</strong> Esta ação apaga os registos de teste e limpa a base do ambiente de testes.
+    </div>
+    <button class="gold full" onclick="confirmResetTest()">Confirmar e Executar Reset de Teste</button>
+    <div id="resetTestOutput" style="margin-top:12px"></div>
+  `;
+}
+
+async function confirmResetTest() {
+  const out = $("resetTestOutput");
+  out.textContent = "Executando reset do ambiente de teste...";
   try {
     const d = await api("/test/reset", { method: "POST", body: JSON.stringify({ confirm: "RESET_TEST_ENVIRONMENT" }) });
-    $("devContent").innerHTML = `${BACK_BUTTON_HTML}<h2>Teste resetado</h2><pre>` + esc(JSON.stringify(d, null, 2)) + "</pre>";
+    out.innerHTML = `<h3 style="color:#4ade80">Ambiente de Teste Resetado</h3><pre>` + esc(JSON.stringify(d, null, 2)) + "</pre>";
   } catch (e) {
-    alert(e.message);
+    out.innerHTML = `<span style="color:#f87171">Não foi possível resetar: ${esc(e.message)}</span>`;
   }
 }
 
